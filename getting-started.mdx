@@ -1,0 +1,78 @@
+---
+title: "Primeiros Passos com a GoMoney API"
+sidebarTitle: "Primeiros Passos"
+description: "Aprenda a configurar sua integração com a GoMoney API para gerenciar clientes e adicionar saldos de tokens GMC via PIX."
+---
+
+A GoMoney API é uma API de integração fintech brasileira que permite gerenciar clientes e adicionar saldos de tokens GMC via PIX. Esta página orienta você pelos pré-requisitos, pelo fluxo de credenciais e pela sequência recomendada para colocar sua integração em produção com segurança.
+
+## Pré-requisitos
+
+Antes de iniciar a integração, confirme que todos os itens abaixo estão satisfeitos:
+
+- Conta ativa na plataforma GoMoney.
+- Tipo de acesso **INTEGRATION** criado para o seu ambiente.
+- Permissão **INTEGRATION\_ONLY** ativa no acesso criado.
+- Acesso ao painel para consulta das chaves de integração.
+- Carteira operacional registrada e **aprovada** antes de entrar em produção.
+- Origem/domínio da aplicação definido e informado ao suporte.
+
+## Sequência Recomendada
+
+Siga as etapas abaixo na ordem apresentada para garantir uma integração consistente e segura.
+
+<Steps>
+  <Step title="Acesso inicial">
+    Crie um acesso do tipo **INTEGRATION** na plataforma GoMoney e ative a permissão **INTEGRATION\_ONLY**. Esse tipo de acesso é o único autorizado a consumir os endpoints da API de integração.
+  </Step>
+
+  <Step title="Solicite as credenciais">
+    Envie uma solicitação ao suporte GoMoney com as seguintes informações:
+
+    - Identidade do integrador (razão social ou nome do responsável técnico).
+    - Identificador do acesso **INTEGRATION** criado.
+    - Domínio/origem da aplicação que realizará as chamadas.
+    - Carteira operacional aprovada que será vinculada.
+    - Fluxos necessários (ex.: cadastro de clientes, adição de saldo via PIX).
+  </Step>
+
+  <Step title="Receba as credenciais">
+    As credenciais — **clientKey** e **clientSecret** — são entregues **exclusivamente por e-mail** pelo time de suporte GoMoney. Nenhum outro canal é utilizado para esse envio.
+
+    <Warning>
+      Você é responsável pelo armazenamento seguro das credenciais. Nunca as exponha em repositórios públicos, logs de aplicação ou variáveis de ambiente não protegidas. Em caso de comprometimento, entre em contato com o suporte imediatamente para revogação.
+    </Warning>
+  </Step>
+
+  <Step title="Habilite a integração">
+    As credenciais recebidas desbloqueiam a operação dentro das regras aprovadas: domínio autorizado e carteira vinculada. Utilize o **clientSecret** no header `secret-key` e o token JWT obtido com o **clientKey** no header `Authorization: Bearer <token>` em todas as requisições à API.
+
+    ```
+    Base URL: https://gmc-api.gomoney.me/api
+    ```
+  </Step>
+
+  <Step title="Cadastre os clientes">
+    Antes de adicionar qualquer saldo, cadastre os clientes na plataforma. O cadastro prévio é obrigatório — a API não permite adicionar saldo a um cliente não registrado.
+  </Step>
+
+  <Step title="Adicione saldos">
+    Com os clientes cadastrados, realize as operações de adição de saldo GMC via PIX. Cada operação deve estar vinculada a um cliente para garantir rastreabilidade e conciliação correta das transações.
+  </Step>
+</Steps>
+
+## Checklist Pré-Produção
+
+Antes de ir a ar, verifique todos os itens abaixo com sua equipe técnica:
+
+<Note>
+  **Revise este checklist antes de qualquer deploy em produção.**
+
+  - [ ] Responsáveis técnicos identificados e cientes dos fluxos de integração.
+  - [ ] Canais de suporte GoMoney mapeados para escalonamento de incidentes.
+  - [ ] Carteira operacional vinculada e aprovada.
+  - [ ] Política de armazenamento seguro das credenciais definida e aplicada.
+  - [ ] Estratégia de conciliação por cliente documentada e implementada.
+  - [ ] Estratégia de resposta a falhas de autenticação (ex.: renovação de token JWT) implementada.
+  - [ ] Estratégia de retentativa para indisponibilidades transitórias da API definida.
+</Note>

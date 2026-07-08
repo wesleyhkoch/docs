@@ -1,0 +1,173 @@
+---
+title: "Autenticação na API GoMoney (Duas Camadas)"
+sidebarTitle: "Autenticação"
+description: "Entenda como autenticar requisições na API GoMoney utilizando autenticação de sessão (Bearer JWT) e autenticação de integração (secret-key) de forma combinada."
+---
+
+A API GoMoney utiliza duas camadas de autenticação que atuam em conjunto para garantir a identidade e a autorização de quem opera a integração: uma **sessão autenticada** via token JWT e uma **chave de integração** codificada em Base64. Ambas devem estar presentes e pertencer ao mesmo usuário integrador para que as requisições sejam aceitas.
+
+## Modelo de Autenticação
+
+A segurança da API GoMoney é sustentada por dois fatores complementares:
+
+| Camada | Mecanismo | Finalidade |
+|---|---|---|
+| **Autenticação de Sessão** | `Authorization: Bearer <JWT>` | Confirma quem está operando a sessão ativa |
+| **Autenticação de Integração** | `secret-key: <Base64>` | Comprova que a chamada parte de um integrador autorizado específico |
+
+As duas camadas trabalham juntas: a sessão identifica o usuário logado, enquanto a chave de integração garante que a requisição não depende exclusivamente da sessão e está vinculada ao integrador correto. Nenhuma das duas, isoladamente, é suficiente para acessar rotas protegidas.
+
+<Note>
+  O token Bearer e a `secret-key` devem pertencer ao **mesmo usuário de integração**. O uso de credenciais de usuários distintos resultará em erro de autenticação.
+</Note>
+
+---
+
+## Requisitos de Acesso para Integração
+
+Para utilizar a API, o usuário deve atender aos seguintes requisitos de acesso:
+
+- **Tipo de acesso:** `INTEGRATION` — o perfil do usuário deve ser do tipo integração, não um perfil de usuário final.
+- **Permissão ativa:** `INTEGRATION_ONLY` — a permissão específica de integração deve estar habilitada na conta.
+- **Credenciais próprias:** o usuário integrador deve possuir e-mail e senha próprios, utilizados exclusivamente no login via API.
+
+<Warning>
+  Nunca compartilhe o e-mail e a senha do usuário integrador com terceiros. Essas credenciais concedem acesso operacional à API e devem ser tratadas com o mesmo nível de sigilo das chaves de integração.
+</Warning>
+
+---
+
+## Autenticação de Sessão
+
+A sessão operacional é obtida no momento do login e deve ser reutilizada nas rotas protegidas de clientes e de adição de saldo. Para iniciar uma sessão, envie uma requisição `POST` ao endpoint de login:
+
+```http
+POST https://gmc-api.gomoney.me/api/users/integration/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+```
+
+Em caso de sucesso, a API retornará um objeto contendo o token JWT e as informações da sessão:
+
+```json
+{
+  "token": "pix-jwt-token",
+  "title": "Successfull login.",
+  "expiresIn": 1783191600000,
+  "userId": "66f0b1b5c1f7b7dc0ce20001"
+}
+```
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `token` | `string` | Token JWT a ser usado no header `Authorization: Bearer` |
+| `title` | `string` | Mensagem de confirmação do login |
+| `expiresIn` | `number` | Timestamp Unix (ms) indicando a expiração do token |
+| `userId` | `string` | Identificador único do usuário integrador na plataforma |
+
+<Tip>
+  Armazene o valor de `expiresIn` e implemente lógica de renovação automática do token antes que ele expire, evitando interrupções nas operações em produção.
+</Tip>
+
+---
+
+## Construindo a `secret-key`
+
+A chave de integração é gerada combinando o `clientKey` e o `clientSecret` fornecidos pelo suporte GoMoney, separados por dois-pontos (`:`) e codificados em Base64:
+
+```js
+// JavaScript / Node.js
+const secretKey = btoa(`${clientKey}:${clientSecret}`);
+```
+
+```python
+# Python
+import base64
+secret_key = base64.b64encode(f"{client_key}:{client_secret}".encode()).decode()
+```
+
+```bash
+# cURL / Shell
+SECRET_KEY=$(echo -n "${CLIENT_KEY}:${CLIENT_SECRET}" | base64)
+```
+
+<Note>
+  O `clientKey` e o `clientSecret` são entregues pela equipe de suporte GoMoney por e-mail, após a criação e aprovação do usuário integrador. Consulte a seção [Solicitação das Chaves de Integração](#solicitando-as-chaves-de-integração) para mais detalhes.
+</Note>
+
+---
+
+## Enviando as Credenciais nos Headers
+
+Toda requisição a rotas protegidas deve incluir os dois headers de autenticação simultaneamente:
+
+```http
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+**Exemplo completo de requisição autenticada:**
+
+```http
+GET https://gmc-api.gomoney.me/api/customers
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+secret-key: Y2xpZW50S2V5OmNsaWVudFNlY3JldA==
+Content-Type: application/json
+Origin: https://seu-dominio-aprovado.com.br
+```
+
+<Warning>
+  O header `Origin` deve corresponder exatamente ao domínio cadastrado e aprovado pelo suporte GoMoney. Requisições originadas de domínios não autorizados serão rejeitadas.
+</Warning>
+
+---
+
+## Regras de Validação
+
+A API GoMoney realiza as seguintes verificações antes de processar qualquer requisição em rotas protegidas:
+
+- O header `Authorization` deve estar presente e conter um token Bearer JWT válido e não expirado.
+- O header `secret-key` deve estar presente e conter o valor Base64 correto de `clientKey:clientSecret`.
+- O token Bearer e a `secret-key` devem pertencer ao **mesmo usuário de integração** — combinações cruzadas são rejeitadas.
+- O usuário da sessão deve possuir tipo de acesso `INTEGRATION` com a permissão `INTEGRATION_ONLY` ativa.
+- O header `Origin` da requisição deve corresponder ao domínio previamente aprovado pelo suporte GoMoney.
+- O token JWT não deve estar expirado. Tokens vencidos retornam erro `401 Unauthorized`.
+
+---
+
+## Solicitando as Chaves de Integração
+
+Para obter o `clientKey` e o `clientSecret`, entre em contato com o suporte GoMoney e forneça as seguintes informações:
+
+1. **Usuário integrador:** e-mail e dados do usuário de integração criado na plataforma.
+2. **Acesso à API:** confirmação de que o acesso do tipo `INTEGRATION` foi criado e configurado.
+3. **Ambiente:** especifique se a solicitação é para o ambiente de **homologação** ou **produção**.
+4. **Origem/Domínio:** informe o domínio que será utilizado no header `Origin` das requisições.
+5. **Carteira receptora:** indique a carteira que receberá as operações da integração.
+6. **Confirmação de registro:** confirme que a carteira está devidamente registrada e aprovada na plataforma.
+
+O suporte retornará o `clientKey` e o `clientSecret` por e-mail após a validação das informações.
+
+---
+
+## Boas Práticas de Armazenamento Seguro
+
+<Warning>
+  **Nunca publique suas credenciais em repositórios de código**, mesmo que privados. Vazamentos em históricos de `git` são uma das principais causas de comprometimento de chaves de API.
+</Warning>
+
+Siga as diretrizes abaixo para proteger suas credenciais de integração:
+
+- **Variáveis de ambiente:** armazene `clientKey`, `clientSecret`, e-mail e senha em variáveis de ambiente (`.env`) e nunca faça commit desses arquivos.
+- **Vault / Gerenciador de segredos:** em ambientes de produção, utilize soluções como HashiCorp Vault, AWS Secrets Manager ou equivalentes.
+- **Não exponha em logs:** evite registrar os valores das chaves, tokens ou a `secret-key` em logs de aplicação ou sistemas de monitoramento.
+- **Rotação em caso de exposição:** se qualquer credencial for exposta acidentalmente, entre em contato imediatamente com o suporte GoMoney para solicitar a rotação das chaves.
+- **Acesso mínimo:** restrinja o acesso às credenciais apenas às partes do sistema que efetivamente necessitam delas.
+
+<Tip>
+  Considere implementar um mecanismo de detecção de segredos no seu pipeline de CI/CD (como `git-secrets` ou `truffleHog`) para evitar que credenciais sejam commitadas acidentalmente.
+</Tip>

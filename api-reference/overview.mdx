@@ -1,0 +1,75 @@
+---
+title: "Visão Geral da API GoMoney"
+sidebarTitle: "Visão Geral"
+description: "Visão geral da API de integração GoMoney: pré-requisitos, sequência técnica recomendada e navegação pelos recursos disponíveis."
+---
+
+Esta seção documenta a **API de integração GoMoney**, permitindo que parceiros realizem operações programáticas como autenticação, gerenciamento de clientes e adição de saldo. Todas as requisições devem ser enviadas para a URL base abaixo.
+
+<Note>
+  **URL Base**
+
+  ```
+  https://gmc-api.gomoney.me/api
+  ```
+</Note>
+
+## Pré-requisitos de Acesso
+
+Antes de consumir qualquer rota da API, certifique-se de que os seguintes requisitos estão atendidos:
+
+- **Acesso do tipo INTEGRATION** criado na plataforma GoMoney.
+- **Permissão `INTEGRATION_ONLY`** ativa no acesso de integração.
+- **E-mail e senha** do acesso de integração para autenticação via API.
+- **`clientKey` e `clientSecret`** fornecidos pelo suporte GoMoney.
+- **Domínio aprovado** para ser utilizado no cabeçalho `Origin` das requisições.
+- **Carteira registrada e aprovada** para o fluxo de recebimento GMC.
+
+## Sequência Técnica Recomendada
+
+Siga a ordem abaixo para garantir uma integração correta e sem bloqueios:
+
+1. **Crie o acesso de integração** na plataforma GoMoney com o tipo `INTEGRATION`.
+2. **Confirme que a permissão `INTEGRATION_ONLY`** está ativa no acesso criado.
+3. **Solicite ao suporte** o `clientKey`, o `clientSecret` e a aprovação do domínio de origem.
+4. **Confirme que a carteira operacional** está registrada e aprovada para recebimento.
+5. **Realize o login via API** utilizando as credenciais do acesso de integração.
+6. **Construa a `secret-key`** codificando em Base64 o par `clientKey:clientSecret` — `btoa(clientKey:clientSecret)`.
+7. **Registre ou localize o cliente** que servirá como referência na reconciliação financeira.
+8. **Crie uma adição de saldo** informando o `customerIdentifier` do cliente correspondente.
+9. **Consulte a listagem ou o detalhe** da adição de saldo para acompanhar o ciclo operacional.
+
+## Navegação
+
+<CardGroup cols={2}>
+  <Card title="Autenticação" href="/api-reference/authentication" icon="lock">
+    Saiba como autenticar na API utilizando o acesso de integração e como construir a `secret-key`.
+  </Card>
+  <Card title="Customers" href="/api-reference/customers" icon="users">
+    Gerencie os clientes associados à sua integração para reconciliação financeira.
+  </Card>
+  <Card title="Adição de Saldo" href="/api-reference/add-balance" icon="circle-dollar-to-slot">
+    Crie e acompanhe operações de adição de saldo vinculadas a um cliente.
+  </Card>
+  <Card title="Erros" href="/api-reference/errors" icon="triangle-exclamation">
+    Consulte os códigos de erro retornados pela API e como tratá-los.
+  </Card>
+</CardGroup>
+
+## Notas de Uso
+
+<Note>
+  O **token de acesso** utilizado nas requisições deve ser obtido exclusivamente pelo login de um acesso do tipo `INTEGRATION` com a permissão `INTEGRATION_ONLY` ativa.
+</Note>
+
+<Note>
+  A **sessão autenticada**, a **`secret-key`** e o **domínio autorizado** devem representar a mesma integração. Misturar credenciais de origens distintas resultará em erros de autorização.
+</Note>
+
+<Note>
+  A **carteira operacional** deve estar registrada e aprovada antes de qualquer operação de adição de saldo ser realizada com sucesso.
+</Note>
+
+<Note>
+  O campo **`customerIdentifier`** é obrigatório em todas as operações de adição de saldo e deve corresponder a um cliente previamente registrado na integração.
+</Note>

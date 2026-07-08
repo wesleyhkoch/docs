@@ -1,0 +1,170 @@
+---
+title: "Modelos de Erro da API GoMoney"
+sidebarTitle: "Erros"
+description: "Referência completa dos formatos de erro retornados pela GoMoney API, incluindo autenticação, validação, negócio e rate limit."
+---
+
+A GoMoney API retorna erros em formatos JSON padronizados, que variam conforme a natureza do problema. Esta página descreve cada formato, seus campos e os contextos em que são utilizados, para facilitar o tratamento de erros na sua integração.
+
+---
+
+## Formato de erro de autenticação no login
+
+Retornado quando as credenciais de login são inválidas (usuário ou senha incorretos).
+
+```json
+{
+  "statusCode": 401,
+  "timestamp": 1783188000000,
+  "path": "/users/integration/login",
+  "message": "Invalid user or password."
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Neste caso, sempre `401`.
+</ResponseField>
+
+<ResponseField name="timestamp" type="integer">
+  Timestamp Unix em milissegundos indicando o momento em que o erro ocorreu.
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Caminho do endpoint que gerou o erro.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem descritiva do erro retornada pela API.
+</ResponseField>
+
+---
+
+## Formato de erro genérico de autenticação
+
+Retornado quando a sessão expirou ou uma credencial de integração (Bearer token, `secret-key` ou `Origin`) é rejeitada.
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid API access key"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Valor `401`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem indicando qual credencial foi rejeitada ou que o token está inválido/expirado.
+</ResponseField>
+
+---
+
+## Formato de erro de validação
+
+Retornado quando o corpo da requisição não está de acordo com o contrato esperado — campos faltando, tipos incorretos ou valores fora do domínio permitido.
+
+```json
+{
+  "statusCode": 400,
+  "message": ["email must be an email"],
+  "error": "Bad Request"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Valor `400`.
+</ResponseField>
+
+<ResponseField name="message" type="string | array de strings">
+  Descrição do problema de validação. Pode ser uma string simples ou um array de strings quando múltiplos campos apresentam erros simultaneamente.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Categoria do erro HTTP. Geralmente `"Bad Request"`.
+</ResponseField>
+
+<Note>
+  O campo `message` pode ser tanto uma `string` quanto um `array de strings`. Certifique-se de tratar ambos os casos na sua implementação.
+</Note>
+
+---
+
+## Erros de negócio
+
+### 403 — Sem permissão para operar o recurso
+
+Retornado quando o recurso existe, mas o usuário autenticado não possui permissão para operá-lo.
+
+```json
+{
+  "statusCode": 403,
+  "message": "You do not have access to this customer"
+}
+```
+
+### 404 — Recurso não encontrado
+
+Retornado quando o recurso solicitado não existe na base de dados.
+
+```json
+{
+  "statusCode": 404,
+  "message": "Customer not found"
+}
+```
+
+---
+
+## Rate limit — 429
+
+Retornado quando o limite de tentativas é excedido para um determinado endpoint ou usuário. O campo `message` indica o tempo de espera em segundos antes de uma nova tentativa ser permitida.
+
+```json
+{
+  "statusCode": 429,
+  "path": "/users/integration/login",
+  "message": "User blocked - Retry-After: 300"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Valor `429`.
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Caminho do endpoint que aplicou o bloqueio por rate limit.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem indicando o bloqueio e o tempo (em segundos) até que novas tentativas sejam permitidas.
+</ResponseField>
+
+---
+
+## Boas práticas para tratamento de erros
+
+<Tip>
+  **Registre o caminho e o ID da transação.** Sempre armazene o `path` do endpoint chamado e o identificador da transação operacional (`_id`) para facilitar a rastreabilidade e o suporte.
+</Tip>
+
+<Note>
+  - **Não realize retentativas automáticas** para erros de autenticação (`401`, `403`) e validação (`400`). Esses erros indicam problemas no payload ou nas credenciais que precisam ser corrigidos antes de nova tentativa.
+  - **Use retentativa controlada** apenas para indisponibilidade transitória (`503`), com backoff exponencial e limite de tentativas definido.
+  - Para erros `429`, respeite o tempo indicado no campo `message` (campo `Retry-After`) antes de tentar novamente.
+</Note>
+
+---
+
+## Tabela de códigos HTTP
+
+| Código | Significado                                       |
+| ------ | ------------------------------------------------- |
+| `201`  | Recurso criado com sucesso                        |
+| `400`  | Corpo inválido ou validação falhou                |
+| `401`  | Credenciais inválidas ou token expirado           |
+| `403`  | Sem permissão para operar o recurso               |
+| `404`  | Recurso não encontrado                            |
+| `417`  | Recurso sem vínculo com o usuário autenticado     |
+| `429`  | Limite de tentativas excedido                     |
+| `503`  | Serviço temporariamente indisponível              |

@@ -1,0 +1,154 @@
+---
+title: "Autenticar na API GoMoney"
+sidebarTitle: "Autenticação"
+description: "Referência técnica de autenticação na API de integração GoMoney: login, geração da secret-key e uso correto dos cabeçalhos de autorização."
+---
+
+Esta página descreve o fluxo de autenticação da **API de integração GoMoney**. Para consumir as rotas protegidas, é necessário obter um token JWT por meio do endpoint de login de integração e construir a `secret-key` a partir das credenciais fornecidas pelo suporte.
+
+## Pré-requisitos
+
+Antes de realizar a primeira chamada autenticada, garanta que todos os itens abaixo estão configurados:
+
+1. **Acesso de integração criado** na plataforma GoMoney.
+2. **Tipo do acesso definido como `INTEGRATION`** nas configurações do perfil.
+3. **Permissão `INTEGRATION_ONLY` ativa** no acesso de integração.
+4. **`clientKey` e `clientSecret` solicitados ao suporte** GoMoney via e-mail.
+5. **Domínio da integração informado ao suporte** para liberação do cabeçalho `Origin`.
+6. **Carteira aprovada** e registrada para o fluxo de recebimento GMC.
+
+---
+
+## Endpoint de Login
+
+### `POST /users/integration/login`
+
+Autentica o acesso de integração e retorna um token JWT para uso nas rotas protegidas.
+
+**URL completa:**
+
+```
+https://gmc-api.gomoney.me/api/users/integration/login
+```
+
+### Corpo da Requisição
+
+<ParamField body="email" type="string" required>
+  E-mail do acesso de integração cadastrado na plataforma GoMoney.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Senha do acesso de integração cadastrado na plataforma GoMoney.
+</ParamField>
+
+### Exemplo de Requisição
+
+```http
+POST https://gmc-api.gomoney.me/api/users/integration/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "seu-usuario@exemplo.com",
+  "password": "sua-senha"
+}
+```
+
+### Resposta de Sucesso — `201 Created`
+
+<ResponseField name="token" type="string">
+  Bearer JWT para ser utilizado no cabeçalho `Authorization` das rotas protegidas.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Mensagem de confirmação retornada pela API após login bem-sucedido.
+</ResponseField>
+
+<ResponseField name="expiresIn" type="integer">
+  Timestamp de expiração do token em milissegundos (Unix epoch ms).
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  Identificador único do usuário autenticado.
+</ResponseField>
+
+### Exemplo de Resposta
+
+```json
+{
+  "token": "pix-jwt-token",
+  "title": "Successfull login.",
+  "expiresIn": 1783191600000,
+  "userId": "66f0b1b5c1f7b7dc0ce20001"
+}
+```
+
+---
+
+## Construindo a `secret-key`
+
+A `secret-key` é um valor Base64 gerado a partir da concatenação do `clientKey` e do `clientSecret` separados por dois-pontos (`:`).
+
+**Formato:**
+
+```
+btoa(clientKey:clientSecret)
+```
+
+**Exemplo em JavaScript:**
+
+```javascript
+const clientKey    = "seu-client-key";
+const clientSecret = "seu-client-secret";
+
+const secretKey = btoa(`${clientKey}:${clientSecret}`);
+// Resultado: string Base64 a ser enviada no cabeçalho secret-key
+```
+
+**Exemplo em Python:**
+
+```python
+import base64
+
+client_key    = "seu-client-key"
+client_secret = "seu-client-secret"
+
+secret_key = base64.b64encode(f"{client_key}:{client_secret}".encode()).decode()
+# Resultado: string Base64 a ser enviada no cabeçalho secret-key
+```
+
+### Uso nos Cabeçalhos
+
+Após obter o `token` (via login) e a `secret-key` (via codificação Base64), inclua ambos em todas as requisições autenticadas:
+
+```http
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+<Warning>
+  A `secret-key` deve corresponder ao mesmo acesso de integração utilizado no login. Utilizar credenciais de origens distintas resultará em erros `401` ou `403`.
+</Warning>
+
+---
+
+## Códigos de Resposta
+
+| Código | Significado |
+|--------|-------------|
+| `201`  | Login realizado com sucesso. Token retornado no corpo da resposta. |
+| `401`  | Credenciais inválidas ou acesso sem a permissão de integração ativa. |
+| `429`  | Usuário bloqueado temporariamente por excesso de tentativas de login. |
+
+---
+
+## Erros Comuns
+
+Fique atento às situações abaixo, que frequentemente causam falhas na autenticação:
+
+- **Login com o usuário principal** em vez do acesso de integração criado especificamente para a API.
+- **Acesso sem a permissão `INTEGRATION_ONLY` ativa**, impedindo o uso do endpoint de integração.
+- **`clientKey` ou `clientSecret` não correspondem** ao usuário autenticado na sessão atual.
+- **Domínio de origem diferente** do que foi aprovado pelo suporte no cabeçalho `Origin`.
+- **Carteira ainda não aprovada** para o fluxo de recebimento GMC, bloqueando operações subsequentes.

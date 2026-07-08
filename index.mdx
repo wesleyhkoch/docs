@@ -1,20 +1,41 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "GoMoney API — Brazilian Fintech Integration Docs"
+sidebarTitle: "Overview"
+description: "Everything you need to authenticate, manage customers, and add GMC token balance via PIX using the GoMoney API."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Welcome to the GoMoney API documentation. GoMoney API is a Brazilian fintech integration API that lets you authenticate securely, manage your customers, and top up GMC token balances via PIX. These docs cover everything from initial setup and authentication through customer management and the full API reference.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Getting Started" href="/getting-started" icon="rocket">
+    Set up your environment and make your first request to the GoMoney API.
+  </Card>
+  <Card title="Authentication" href="/authentication" icon="lock">
+    Learn how to obtain a Bearer JWT token and build your Base64-encoded secret-key.
+  </Card>
+  <Card title="Customers" href="/customers" icon="users">
+    Create and manage the customers associated with your integration.
+  </Card>
+  <Card title="API Reference" href="/api-reference/overview" icon="code">
+    Explore the full endpoint reference for the GoMoney API.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Onboarding Flow
+
+Follow these four steps to go from zero to your first successful API call.
+
+<Steps>
+  <Step title="Create an Integration Access">
+    Log in to the GoMoney platform and create a new **INTEGRATION** access for your project. This registers your application and unlocks API-level permissions.
+  </Step>
+  <Step title="Request Your Credentials">
+    Contact GoMoney support to receive your `clientKey`, `clientSecret`, and allowed `domain`. Keep these values secret — you will use them in every authenticated request.
+  </Step>
+  <Step title="Authenticate">
+    Call the login endpoint to obtain a **Bearer JWT token**. Then Base64-encode your `clientKey:clientSecret` pair to build your **secret-key** header. Both values are required for protected routes.
+  </Step>
+  <Step title="Register Customers and Add Balances">
+    Use the Customers endpoints to register your end-users, then trigger PIX-based deposits to add GMC token balance to their accounts.
+  </Step>
+</Steps>

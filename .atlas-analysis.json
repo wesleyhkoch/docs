@@ -1,0 +1,69 @@
+{
+  "projectType": "api-service",
+  "projectName": "GoMoney API",
+  "projectDescription": "API de integração externa da GoMoney para gerenciamento de customers e adição de saldo em GMC via PIX.",
+  "theme": "luma",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guias",
+        "groups": [
+          {
+            "group": "Introdução",
+            "pages": ["welcome", "getting-started"]
+          },
+          {
+            "group": "Conceitos",
+            "pages": ["authentication", "customers", "add-balance"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Visão Geral",
+            "pages": ["api-reference/overview"]
+          },
+          {
+            "group": "Autenticação",
+            "pages": ["api-reference/authentication"]
+          },
+          {
+            "group": "Customers",
+            "pages": ["api-reference/customers"]
+          },
+          {
+            "group": "Adição de Saldo",
+            "pages": ["api-reference/add-balance"]
+          },
+          {
+            "group": "Erros",
+            "pages": ["api-reference/errors"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Autenticação dual (Bearer JWT + secret-key Base64)",
+    "Gerenciamento de customers (criar, listar, atualizar, remover)",
+    "Adição de saldo em GMC para customers cadastrados",
+    "Consulta de transações por período ou ID",
+    "Hierarquia de taxas PIX: customer → user → settings",
+    "Rastreabilidade via blockchain (mintHash, approveHash, transferHash)"
+  ],
+  "publicApiSurface": [
+    "POST /users/integration/login",
+    "POST /customers",
+    "GET /customers/all",
+    "PATCH /customers/{customerId}",
+    "DELETE /customers/{customerId}",
+    "POST /transactions/add-balance",
+    "GET /transactions/add-balance/all",
+    "GET /transactions/add-balance/{transactionId}"
+  ]
+}

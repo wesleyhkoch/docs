@@ -1,0 +1,113 @@
+---
+title: "Adição de Saldo — Crédito de GMC no GoMoney"
+sidebarTitle: "Adição de Saldo"
+description: "Saiba como creditar tokens GMC na carteira de um cliente via GoMoney API, entenda o fluxo de validação, os dados a persistir e as consultas auxiliares disponíveis."
+---
+
+A **Adição de Saldo** é a operação responsável por creditar tokens GMC diretamente na carteira de um cliente cadastrado na plataforma GoMoney. Por meio dessa operação, integradores podem programaticamente depositar saldo em nome de um usuário, com rastreabilidade completa via hashes de confirmação em blockchain.
+
+---
+
+## O que é a Adição de Saldo
+
+A operação de Adição de Saldo permite que uma integração creditada transfira tokens GMC para a carteira de um cliente previamente cadastrado. Ela deve ser utilizada sempre que o sistema integrado precisar:
+
+- Recarregar o saldo de um cliente na plataforma GoMoney;
+- Converter valores em moedas suportadas (BRL, USD, USDT) em tokens GMC a serem creditados;
+- Registrar e rastrear créditos com referência interna e confirmação em blockchain.
+
+<Warning>
+  Esta operação é exclusiva para integrações credenciadas (`INTEGRATION_ONLY`). Chamadas realizadas sem credenciais de integração válidas serão rejeitadas pela plataforma.
+</Warning>
+
+<Note>
+  Para que a transferência de GMC seja concluída com sucesso, a carteira do cliente deve estar aprovada e ativa na plataforma GoMoney. Certifique-se de que o cliente passou pelo fluxo de aprovação de carteira antes de realizar uma Adição de Saldo.
+</Note>
+
+---
+
+## Autenticação Necessária
+
+Esta operação exige três camadas de autenticação simultâneas:
+
+### Bearer Token
+
+Token de sessão obtido após a autenticação do integrador na plataforma. Deve ser enviado no cabeçalho `Authorization` no formato `Bearer <token>`.
+
+### secret-key
+
+Chave secreta vinculada à integração, fornecida durante o credenciamento. Deve ser incluída no cabeçalho `secret-key` em todas as requisições. Essa chave identifica e autoriza a integração a executar operações sensíveis como créditos de saldo.
+
+### Origin
+
+O cabeçalho `Origin` da requisição deve corresponder exatamente a um dos domínios aprovados e cadastrados para a integração. Requisições originadas de domínios não autorizados serão bloqueadas independentemente das demais credenciais.
+
+---
+
+## Parâmetros Essenciais
+
+Ao submeter uma Adição de Saldo, os seguintes campos são indispensáveis:
+
+| Campo                  | Descrição                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `customerIdentifier`   | Identificador do cliente: `_id` interno da plataforma ou `taxId` (CPF/CNPJ). **Obrigatório.** |
+| `amount`               | Valor a ser creditado, expresso na moeda de referência informada.                           |
+| `currency`             | Moeda de referência do valor enviado. Valores aceitos: `BRL`, `USD`, `GMC`, `USDT`.         |
+
+> **Recomendação operacional:** inclua sempre o `customerIdentifier` e especifique explicitamente a `currency`. Isso garante rastreabilidade e evita ambiguidades no processamento do crédito.
+
+---
+
+## Fluxo Pós-Submissão
+
+Após o envio bem-sucedido da requisição, a plataforma GoMoney executa automaticamente as seguintes etapas:
+
+1. **Validação dos dados** — Os campos obrigatórios e as credenciais de autenticação são verificados. Qualquer inconsistência interrompe o processamento com status `FAILED`.
+2. **Localização das carteiras** — A plataforma identifica a carteira GMC vinculada ao `customerIdentifier` informado.
+3. **Adição do saldo GMC** — O valor correspondente em tokens GMC é creditado na carteira interna do cliente.
+4. **Transferência para a carteira vinculada** — Os tokens GMC são transferidos para a carteira do usuário associada à integração.
+5. **Registro de hashes blockchain** — As confirmações das transações são registradas e os hashes de blockchain são armazenados para auditoria e rastreabilidade.
+
+Ao final do fluxo, a operação recebe o status `COMPLETED`. Em caso de falha em qualquer etapa, o status é atualizado para `FAILED`.
+
+---
+
+## Dados a Persistir
+
+Após a criação de uma Adição de Saldo, recomenda-se persistir os seguintes dados no sistema integrador para fins de rastreabilidade, reconciliação e suporte:
+
+- **`_id`** — Identificador interno da operação de Adição de Saldo na plataforma GoMoney.
+- **Vínculo com o cliente** — Referência ao `customerIdentifier` utilizado (`_id` ou `taxId`).
+- **Referência de correlação** — Identificador externo ou número de pedido do sistema integrador associado à operação.
+- **Status atual** — Estado da operação (`COMPLETED` ou `FAILED`), a ser atualizado conforme retorno da plataforma.
+- **Timestamps relevantes** — Data e hora de criação (`createdAt`) e de atualização (`updatedAt`) da operação.
+
+---
+
+## Consultas Auxiliares
+
+A API GoMoney disponibiliza endpoints para consulta das operações de Adição de Saldo:
+
+- **Listagem de operações** — Retorna todas as operações de Adição de Saldo associadas a um determinado cliente ou integração, com suporte a filtros e paginação.
+- **Consulta individual** — Retorna os detalhes completos de uma operação específica a partir do seu `_id`, incluindo status atual, hashes blockchain e timestamps.
+
+---
+
+## Referências
+
+<CardGroup cols={2}>
+  <Card
+    title="API de Adição de Saldo"
+    icon="circle-dollar-to-slot"
+    href="/api-reference/add-balance"
+  >
+    Consulte a referência completa dos endpoints, parâmetros e exemplos de requisição para a operação de Adição de Saldo.
+  </Card>
+  <Card
+    title="Customers"
+    icon="users"
+    href="/customers"
+  >
+    Saiba como cadastrar e gerenciar clientes na plataforma GoMoney antes de realizar operações de crédito.
+  </Card>
+</CardGroup>

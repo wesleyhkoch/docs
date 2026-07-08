@@ -1,0 +1,165 @@
+---
+title: "Customers: Cadastro e Gestão no GoMoney API"
+sidebarTitle: "Customers"
+description: "Entenda como cadastrar e gerenciar clientes no GoMoney API, incluindo carteiras automáticas, hierarquia de taxas PIX e ciclo de vida completo do customer."
+---
+
+Customers são entidades externas registradas sob um usuário de integração no GoMoney API. Cada customer representa um cliente final do seu negócio e é vinculado à sua conta de integração para fins de **reconciliação financeira** e **rastreabilidade de operações**.
+
+## O que é um Customer?
+
+No contexto do GoMoney API, um **customer** é o registro de um cliente externo associado ao seu usuário de integração. Ele serve como ponto central para organizar saldos, transações e identificações fiscais de cada pessoa ou entidade que opera por meio da sua integração.
+
+O cadastro de customers é **obrigatório** antes de realizar operações financeiras em nome de um cliente, pois o identificador do customer (`_id`) é utilizado como referência direta nas operações de adição de saldo e em outras transações, garantindo que cada movimentação seja corretamente atribuída e rastreada.
+
+### Campos do Customer
+
+| Campo    | Descrição                                              |
+|----------|--------------------------------------------------------|
+| `_id`    | Identificador único do customer (gerado automaticamente) |
+| `userId` | ID do usuário de integração ao qual o customer pertence |
+| `taxId`  | CPF ou documento fiscal do cliente                     |
+| `name`   | Nome completo do cliente                               |
+| `email`  | Endereço de e-mail do cliente                          |
+| `deleted`| Indica se o customer foi excluído logicamente          |
+| `balance`| Saldo do customer (`currency` e `amount`)              |
+| `wallet` | Carteira associada (`address`)                         |
+
+<Note>
+O campo `taxId` aceita CPF e outros documentos fiscais brasileiros. Certifique-se de que o documento informado é válido e pertence ao cliente real para garantir a conformidade regulatória.
+</Note>
+
+---
+
+## Ciclo de Vida do Customer
+
+O customer percorre um ciclo de vida bem definido dentro da plataforma. Compreender cada etapa é essencial para gerenciar corretamente suas operações financeiras.
+
+1. **Criação** — O customer é cadastrado com `taxId`, `name` e `email`. Um `_id` único é gerado automaticamente e uma carteira digital é provisionada imediatamente.
+2. **Uso em Operações** — O `_id` do customer é utilizado como `customerIdentifier` em operações de adição de saldo e demais transações financeiras.
+3. **Atualização** — Os dados do customer podem ser atualizados a qualquer momento, como nome, e-mail ou informações fiscais.
+4. **Exclusão Lógica** — Quando necessário, o customer pode ser desativado. O registro **não é removido fisicamente** do sistema; em vez disso, o campo `deleted` é marcado como `true`.
+
+```
+  Criação ──► Uso em Operações ──► Atualização (opcional)
+                                          │
+                                          ▼
+                               Exclusão Lógica (deleted: true)
+```
+
+<Tip>
+Prefira sempre a exclusão lógica em vez de tentar remover registros. Isso preserva o histórico de transações e garante a rastreabilidade completa das operações realizadas pelo customer.
+</Tip>
+
+---
+
+## Carteira Automática por Customer
+
+Ao criar um customer, o GoMoney API **provisiona automaticamente uma carteira digital** para ele. Essa carteira é representada pelo campo `wallet`, que contém o endereço (`address`) associado ao customer.
+
+### Por que a carteira importa?
+
+- **Isolamento de saldos:** Cada customer possui seu próprio saldo (`balance`), separado dos demais clientes e do saldo geral da integração.
+- **Rastreabilidade:** Todas as movimentações financeiras ficam vinculadas à carteira do customer, facilitando auditorias e reconciliações.
+- **Operações PIX:** O endereço da carteira pode ser utilizado em transações PIX, conectando o cliente final diretamente à infraestrutura de pagamentos.
+
+<Note>
+A criação da carteira é automática e transparente — não é necessária nenhuma ação adicional após o cadastro do customer para que a carteira esteja disponível.
+</Note>
+
+---
+
+## Hierarquia de Taxas PIX
+
+O GoMoney API aplica taxas PIX seguindo uma hierarquia de precedência em três níveis. Isso permite personalizar as taxas cobradas para cada cliente de forma granular.
+
+```
+Customer (maior precedência)
+    │
+    ▼
+Usuário de Integração
+    │
+    ▼
+Configurações Globais (menor precedência)
+```
+
+| Nível                        | Descrição                                                                 |
+|------------------------------|---------------------------------------------------------------------------|
+| **Customer**                 | Taxa configurada diretamente no customer. Tem a **maior precedência**.    |
+| **Usuário de Integração**    | Taxa padrão definida no usuário. Aplica-se quando o customer não tem taxa configurada. |
+| **Configurações Globais**    | Taxa global da plataforma. Aplica-se quando nem o customer nem o usuário possuem taxa definida. |
+
+<Tip>
+Utilize taxas no nível do customer para oferecer condições diferenciadas a clientes específicos, como tarifas reduzidas para clientes premium, sem alterar as configurações globais ou do usuário de integração.
+</Tip>
+
+---
+
+## O Campo `customerIdentifier` nas Operações de Saldo
+
+O `_id` gerado no momento do cadastro do customer é o valor que deve ser utilizado como `customerIdentifier` nas operações de **adição de saldo** e outras transações financeiras.
+
+### Por que isso é importante?
+
+- **Reconciliação correta:** Vincular o `customerIdentifier` garante que o saldo adicionado seja creditado na carteira correta do customer.
+- **Rastreabilidade:** Cada operação fica associada a um customer específico, permitindo auditar o histórico de movimentações por cliente.
+- **Integridade financeira:** Sem o `customerIdentifier`, a operação pode não ser atribuída corretamente, comprometendo os relatórios e a contabilidade.
+
+**Exemplo de uso:**
+
+```json
+{
+  "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "amount": 15000,
+  "currency": "BRL"
+}
+```
+
+<Note>
+Sempre utilize o `_id` retornado na criação do customer como `customerIdentifier`. Não confunda com `taxId` (CPF/documento) — o identificador correto para operações é o `_id` do registro.
+</Note>
+
+---
+
+## Exclusão Lógica (Flag `deleted`)
+
+O GoMoney API adota o conceito de **exclusão lógica** para customers. Ao desativar um customer, o sistema **não remove o registro do banco de dados**; em vez disso, marca o campo `deleted` como `true`.
+
+### Implicações da exclusão lógica
+
+- **Histórico preservado:** Todas as transações e operações anteriores ao customer permanecem acessíveis para consulta e auditoria.
+- **Rastreabilidade garantida:** Mesmo após a exclusão lógica, é possível identificar quais operações foram realizadas pelo customer.
+- **Reativação possível:** Por ser uma marcação e não uma remoção física, o customer pode ser reativado se necessário, bastando atualizar o campo `deleted` para `false`.
+
+```json
+{
+  "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "João da Silva",
+  "deleted": true
+}
+```
+
+<Tip>
+Ao listar customers em sua aplicação, filtre sempre por `deleted: false` para exibir apenas os registros ativos e evitar confusão operacional.
+</Tip>
+
+---
+
+## Referências da API
+
+<CardGroup cols={2}>
+  <Card
+    title="API de Customers"
+    icon="users"
+    href="/api-reference/customers"
+  >
+    Consulte todos os endpoints disponíveis para criação, listagem, atualização e exclusão lógica de customers.
+  </Card>
+  <Card
+    title="Adição de Saldo"
+    icon="circle-dollar-to-slot"
+    href="/api-reference/add-balance"
+  >
+    Saiba como adicionar saldo a um customer utilizando o `customerIdentifier` para garantir a correta reconciliação.
+  </Card>
+</CardGroup>

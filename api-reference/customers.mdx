@@ -1,0 +1,295 @@
+---
+title: "API de Customers — Criar, Listar e Gerenciar"
+sidebarTitle: "Customers"
+description: "Referência completa da API de Customers: crie, liste, atualize e remova customers vinculados à sua conta GoMoney via REST."
+---
+
+A API de Customers permite gerenciar os clientes externos vinculados à sua conta GoMoney. Cada customer possui um documento fiscal (CPF ou CNPJ), um endereço de wallet gerado automaticamente e um saldo rastreável. Todas as operações exigem autenticação via token Bearer e secret-key.
+
+<Note>
+  A hierarquia de recursos segue a ordem **customer → user → settings**: customers são sempre criados sob o contexto do usuário autenticado e herdam as configurações definidas em seu perfil. O campo `userId` presente em cada customer identifica o usuário proprietário do registro.
+</Note>
+
+## Base URL
+
+```
+https://gmc-api.gomoney.me/api
+```
+
+## Autenticação
+
+Todos os endpoints exigem os seguintes cabeçalhos:
+
+| Cabeçalho       | Valor                      |
+| --------------- | -------------------------- |
+| `Authorization` | `Bearer {{accessToken}}`   |
+| `secret-key`    | `{{secretKeyBase64}}`      |
+
+## Endpoints disponíveis
+
+| Método   | Caminho                        | Finalidade                          |
+| -------- | ------------------------------ | ----------------------------------- |
+| `POST`   | `/customers`                   | Cria um novo customer               |
+| `GET`    | `/customers/all`               | Lista todos os customers ativos     |
+| `PATCH`  | `/customers/{customerId}`      | Atualiza um customer                |
+| `DELETE` | `/customers/{customerId}`      | Remove logicamente um customer      |
+
+---
+
+## POST /customers — Criar customer
+
+Cria um novo customer associado ao usuário autenticado. Ao ser criado, uma wallet é gerada automaticamente para o customer.
+
+### Requisição
+
+```http
+POST https://gmc-api.gomoney.me/api/customers
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+Content-Type: application/json
+```
+
+### Parâmetros do corpo
+
+<ParamField body="taxId" type="string" required>
+  Documento do customer. Aceita CPF (11 dígitos) ou CNPJ (14 dígitos), somente números.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Nome completo ou razão social do customer.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Endereço de e-mail do customer. Deve ser único dentro do contexto do usuário autenticado.
+</ParamField>
+
+### Exemplo de requisição
+
+```json
+{
+  "taxId": "39053344705",
+  "name": "Cliente Externo 01",
+  "email": "cliente01@example.com"
+}
+```
+
+### Resposta de sucesso — `201 Created`
+
+<ResponseField name="_id" type="string">
+  Identificador interno do customer. Persista este valor para operações futuras (atualização, remoção, transferências).
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  Identificador do usuário proprietário ao qual este customer está vinculado.
+</ResponseField>
+
+<ResponseField name="taxId" type="string">
+  Documento do customer (CPF ou CNPJ) conforme enviado na requisição.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Nome do customer.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  E-mail do customer.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  Indica se o customer foi removido logicamente. Sempre `false` na criação.
+</ResponseField>
+
+<ResponseField name="balance" type="object">
+  Saldo atual do customer.
+  <Expandable title="Campos de balance">
+    <ResponseField name="currency" type="string">
+      Moeda do saldo (ex.: `"BRL"`).
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Valor do saldo. Sempre `0` na criação.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="wallet" type="object">
+  Wallet blockchain gerada automaticamente para o customer.
+  <Expandable title="Campos de wallet">
+    <ResponseField name="address" type="string">
+      Endereço público da wallet gerada automaticamente para este customer.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Exemplo de resposta
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "39053344705",
+  "name": "Cliente Externo 01",
+  "email": "cliente01@example.com",
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 0 },
+  "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+}
+```
+
+### Códigos de resposta
+
+| Código | Descrição                                                                 |
+| ------ | ------------------------------------------------------------------------- |
+| `201`  | Customer criado com sucesso — persista o `_id` para operações futuras     |
+| `400`  | Dados inválidos ou campos obrigatórios ausentes                           |
+| `401`  | Token ou `secret-key` inválidos                                           |
+
+---
+
+## GET /customers/all — Listar customers
+
+Retorna a lista de todos os customers ativos (não removidos) vinculados ao usuário autenticado.
+
+### Requisição
+
+```http
+GET https://gmc-api.gomoney.me/api/customers/all
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+### Resposta de sucesso — `200 OK`
+
+Retorna um array de objetos com o resumo de cada customer.
+
+### Exemplo de resposta
+
+```json
+[
+  {
+    "_id": "66f0b1b5c1f7b7dc0ce30001",
+    "taxId": "39053344705",
+    "name": "Cliente Externo 01",
+    "email": "cliente01@example.com",
+    "deleted": false,
+    "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+  }
+]
+```
+
+### Códigos de resposta
+
+| Código | Descrição                              |
+| ------ | -------------------------------------- |
+| `200`  | Lista retornada com sucesso            |
+| `401`  | Token ou `secret-key` inválidos        |
+
+---
+
+## PATCH /customers/{customerId} — Atualizar customer
+
+Atualiza parcialmente os dados de um customer existente. Apenas os campos enviados no corpo serão modificados.
+
+### Requisição
+
+```http
+PATCH https://gmc-api.gomoney.me/api/customers/{customerId}
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+Content-Type: application/json
+```
+
+### Parâmetro de rota
+
+<ParamField path="customerId" type="string" required>
+  Identificador interno do customer a ser atualizado (campo `_id` retornado na criação).
+</ParamField>
+
+### Parâmetros do corpo (todos opcionais)
+
+<ParamField body="taxId" type="string">
+  Novo documento do customer (CPF ou CNPJ).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Novo nome completo ou razão social do customer.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Novo endereço de e-mail do customer.
+</ParamField>
+
+### Exemplo de requisição
+
+```json
+{
+  "name": "Cliente Externo 01 Atualizado",
+  "email": "cliente01.updated@example.com"
+}
+```
+
+### Resposta de sucesso — `200 OK`
+
+### Exemplo de resposta
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "taxId": "39053344705",
+  "name": "Cliente Externo 01 Atualizado",
+  "email": "cliente01.updated@example.com"
+}
+```
+
+### Códigos de resposta
+
+| Código | Descrição                                              |
+| ------ | ------------------------------------------------------ |
+| `200`  | Customer atualizado com sucesso                        |
+| `400`  | Dados inválidos no corpo da requisição                 |
+| `401`  | Token ou `secret-key` inválidos                        |
+| `403`  | O customer não pertence ao usuário autenticado         |
+| `404`  | Customer não encontrado                                |
+
+---
+
+## DELETE /customers/{customerId} — Remover customer
+
+Remove logicamente um customer. O registro **não é excluído** do banco de dados — apenas o campo `deleted` é alterado para `true`, preservando o histórico de transações associado.
+
+### Requisição
+
+```http
+DELETE https://gmc-api.gomoney.me/api/customers/{customerId}
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+### Parâmetro de rota
+
+<ParamField path="customerId" type="string" required>
+  Identificador interno do customer a ser removido (campo `_id` retornado na criação).
+</ParamField>
+
+### Resposta de sucesso — `200 OK`
+
+### Exemplo de resposta
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "deleted": true
+}
+```
+
+<Note>
+  A operação de exclusão é **lógica**: o registro permanece no banco com `deleted: true`. Customers removidos não aparecem na listagem do endpoint `GET /customers/all`, mas seu histórico de transações continua acessível para fins de auditoria.
+</Note>
+
+### Códigos de resposta
+
+| Código | Descrição                                              |
+| ------ | ------------------------------------------------------ |
+| `200`  | Customer removido logicamente com sucesso              |
+| `401`  | Token ou `secret-key` inválidos                        |
+| `403`  | O customer não pertence ao usuário autenticado         |
+| `404`  | Customer não encontrado                                |
