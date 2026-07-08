@@ -1,41 +1,47 @@
 ---
-title: "GoMoney API — Brazilian Fintech Integration Docs"
-sidebarTitle: "Overview"
-description: "Everything you need to authenticate, manage customers, and add GMC token balance via PIX using the GoMoney API."
+title: "GoMoney API — Documentação de Integração Fintech"
+sidebarTitle: "Início"
+description: "Tudo que você precisa para autenticar com segurança, gerenciar clientes e adicionar saldo de tokens GMC via PIX usando a GoMoney API."
 ---
 
-Welcome to the GoMoney API documentation. GoMoney API is a Brazilian fintech integration API that lets you authenticate securely, manage your customers, and top up GMC token balances via PIX. These docs cover everything from initial setup and authentication through customer management and the full API reference.
+Bem-vindo à documentação da GoMoney API. A GoMoney API é uma API de integração fintech brasileira que permite autenticar com segurança, gerenciar seus clientes e recarregar saldos de tokens GMC via PIX. Esta documentação cobre tudo, desde a configuração inicial e autenticação até o gerenciamento de clientes e a referência completa da API.
 
 <CardGroup cols={2}>
-  <Card title="Getting Started" href="/getting-started" icon="rocket">
-    Set up your environment and make your first request to the GoMoney API.
+  <Card title="Primeiros Passos" href="/getting-started" icon="rocket">
+    Configure seu ambiente e realize sua primeira requisição à GoMoney API.
   </Card>
-  <Card title="Authentication" href="/authentication" icon="lock">
-    Learn how to obtain a Bearer JWT token and build your Base64-encoded secret-key.
+  <Card title="Autenticação" href="/authentication" icon="lock">
+    Saiba como obter um token Bearer JWT e construir o header secret-key em Base64.
   </Card>
-  <Card title="Customers" href="/customers" icon="users">
-    Create and manage the customers associated with your integration.
+  <Card title="Clientes" href="/customers" icon="users">
+    Crie e gerencie os clientes associados à sua integração.
   </Card>
-  <Card title="API Reference" href="/api-reference/overview" icon="code">
-    Explore the full endpoint reference for the GoMoney API.
+  <Card title="Referência da API" href="/api-reference/overview" icon="code">
+    Explore a referência completa de endpoints da GoMoney API.
   </Card>
 </CardGroup>
 
-## Onboarding Flow
+## Fluxo de Integração
 
-Follow these four steps to go from zero to your first successful API call.
+Siga as seis etapas abaixo para sair do zero até a sua primeira chamada à API bem-sucedida.
 
 <Steps>
-  <Step title="Create an Integration Access">
-    Log in to the GoMoney platform and create a new **INTEGRATION** access for your project. This registers your application and unlocks API-level permissions.
+  <Step title="Crie um Acesso de Integração">
+    Acesse a plataforma GoMoney e crie um acesso do tipo **INTEGRATION** para o seu projeto com a permissão **INTEGRATION\_ONLY**. Esse é o único tipo de acesso autorizado a consumir os endpoints da API de integração.
   </Step>
-  <Step title="Request Your Credentials">
-    Contact GoMoney support to receive your `clientKey`, `clientSecret`, and allowed `domain`. Keep these values secret — you will use them in every authenticated request.
+  <Step title="Solicite as Credenciais">
+    Entre em contato com o suporte GoMoney informando o identificador do acesso criado, o domínio da sua aplicação e a carteira operacional que será vinculada. O suporte abrirá o processo de provisionamento de credenciais.
   </Step>
-  <Step title="Authenticate">
-    Call the login endpoint to obtain a **Bearer JWT token**. Then Base64-encode your `clientKey:clientSecret` pair to build your **secret-key** header. Both values are required for protected routes.
+  <Step title="Receba as Credenciais">
+    Você receberá seu **clientKey** e **clientSecret** exclusivamente por e-mail do time de suporte GoMoney. Armazene essas credenciais com segurança e nunca as exponha em repositórios públicos ou logs.
   </Step>
-  <Step title="Register Customers and Add Balances">
-    Use the Customers endpoints to register your end-users, then trigger PIX-based deposits to add GMC token balance to their accounts.
+  <Step title="Habilite a Integração">
+    Com as credenciais em mãos, configure os headers de autenticação: encode `clientKey:clientSecret` em Base64 para o header `secret-key` e utilize o token JWT obtido via login no header `Authorization: Bearer <token>`.
+  </Step>
+  <Step title="Cadastre os Clientes">
+    Antes de adicionar qualquer saldo, registre seus usuários finais como clientes na plataforma. O cadastro prévio é obrigatório — a API não permite adicionar saldo a clientes não registrados.
+  </Step>
+  <Step title="Adicione Saldos via PIX">
+    Com os clientes cadastrados, realize operações de adição de saldo GMC via PIX. Cada operação deve estar vinculada a um cliente para garantir rastreabilidade e conciliação correta das transações.
   </Step>
 </Steps>

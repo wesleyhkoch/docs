@@ -1,10 +1,10 @@
 ---
-title: "API de Customers — Criar, Listar e Gerenciar"
+title: "API Customers — Criar, Listar, Atualizar e Remover"
 sidebarTitle: "Customers"
-description: "Referência completa da API de Customers: crie, liste, atualize e remova customers vinculados à sua conta GoMoney via REST."
+description: "Gerencie customers vinculados à sua conta GoMoney: crie registros com wallet automática, liste, atualize dados e realize remoções lógicas via REST."
 ---
 
-A API de Customers permite gerenciar os clientes externos vinculados à sua conta GoMoney. Cada customer possui um documento fiscal (CPF ou CNPJ), um endereço de wallet gerado automaticamente e um saldo rastreável. Todas as operações exigem autenticação via token Bearer e secret-key.
+A API de Customers permite que você gerencie os clientes externos vinculados à sua conta GoMoney. Cada customer possui um documento fiscal (CPF ou CNPJ), um endereço de wallet gerado automaticamente e um saldo rastreável. Todas as operações exigem autenticação via token Bearer e secret-key.
 
 <Note>
   A hierarquia de recursos segue a ordem **customer → user → settings**: customers são sempre criados sob o contexto do usuário autenticado e herdam as configurações definidas em seu perfil. O campo `userId` presente em cada customer identifica o usuário proprietário do registro.
@@ -12,7 +12,7 @@ A API de Customers permite gerenciar os clientes externos vinculados à sua cont
 
 ## Base URL
 
-```
+```text
 https://gmc-api.gomoney.me/api
 ```
 
@@ -103,7 +103,7 @@ Content-Type: application/json
   Saldo atual do customer.
   <Expandable title="Campos de balance">
     <ResponseField name="currency" type="string">
-      Moeda do saldo (ex.: `"BRL"`).
+      Moeda do saldo. Sempre `"BRL"`.
     </ResponseField>
     <ResponseField name="amount" type="number">
       Valor do saldo. Sempre `0` na criação.
@@ -160,6 +160,35 @@ secret-key: {{secretKeyBase64}}
 ### Resposta de sucesso — `200 OK`
 
 Retorna um array de objetos com o resumo de cada customer.
+
+<ResponseField name="[]" type="array">
+  Lista de customers vinculados à sua conta.
+  <Expandable title="Campos de cada customer">
+    <ResponseField name="_id" type="string">
+      Identificador interno do customer.
+    </ResponseField>
+    <ResponseField name="taxId" type="string">
+      Documento do customer (CPF ou CNPJ).
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Nome completo ou razão social do customer.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Endereço de e-mail do customer.
+    </ResponseField>
+    <ResponseField name="deleted" type="boolean">
+      Indica se o customer foi removido logicamente.
+    </ResponseField>
+    <ResponseField name="wallet" type="object">
+      Wallet associada ao customer.
+      <Expandable title="Campos de wallet">
+        <ResponseField name="address" type="string">
+          Endereço público da wallet do customer.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
 ### Exemplo de resposta
 
@@ -229,6 +258,22 @@ Content-Type: application/json
 
 ### Resposta de sucesso — `200 OK`
 
+<ResponseField name="_id" type="string">
+  Identificador interno do customer.
+</ResponseField>
+
+<ResponseField name="taxId" type="string">
+  Documento do customer (CPF ou CNPJ) atualizado.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Nome atualizado do customer.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  E-mail atualizado do customer.
+</ResponseField>
+
 ### Exemplo de resposta
 
 ```json
@@ -254,7 +299,7 @@ Content-Type: application/json
 
 ## DELETE /customers/{customerId} — Remover customer
 
-Remove logicamente um customer. O registro **não é excluído** do banco de dados — apenas o campo `deleted` é alterado para `true`, preservando o histórico de transações associado.
+Remove logicamente um customer. O registro **não é excluído** — apenas o campo `deleted` é alterado para `true`, preservando o histórico de transações associado.
 
 ### Requisição
 
@@ -272,6 +317,14 @@ secret-key: {{secretKeyBase64}}
 
 ### Resposta de sucesso — `200 OK`
 
+<ResponseField name="_id" type="string">
+  Identificador interno do customer removido.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  Indica que o customer foi removido logicamente. Sempre `true` após esta operação.
+</ResponseField>
+
 ### Exemplo de resposta
 
 ```json
@@ -282,7 +335,7 @@ secret-key: {{secretKeyBase64}}
 ```
 
 <Note>
-  A operação de exclusão é **lógica**: o registro permanece no banco com `deleted: true`. Customers removidos não aparecem na listagem do endpoint `GET /customers/all`, mas seu histórico de transações continua acessível para fins de auditoria.
+  A operação de exclusão é **lógica**: o customer é marcado com `deleted: true` e deixa de aparecer na listagem de `GET /customers/all`, mas seu histórico de transações continua acessível para fins de auditoria.
 </Note>
 
 ### Códigos de resposta

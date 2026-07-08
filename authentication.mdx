@@ -1,7 +1,7 @@
 ---
-title: "Autenticação na API GoMoney (Duas Camadas)"
+title: "Autenticação na API GoMoney: Duas Camadas de Segurança"
 sidebarTitle: "Autenticação"
-description: "Entenda como autenticar requisições na API GoMoney utilizando autenticação de sessão (Bearer JWT) e autenticação de integração (secret-key) de forma combinada."
+description: "Aprenda a autenticar requisições na API GoMoney com Bearer JWT e secret-key, entendendo os requisitos de acesso e boas práticas de segurança."
 ---
 
 A API GoMoney utiliza duas camadas de autenticação que atuam em conjunto para garantir a identidade e a autorização de quem opera a integração: uma **sessão autenticada** via token JWT e uma **chave de integração** codificada em Base64. Ambas devem estar presentes e pertencer ao mesmo usuário integrador para que as requisições sejam aceitas.
@@ -169,5 +169,5 @@ Siga as diretrizes abaixo para proteger suas credenciais de integração:
 - **Acesso mínimo:** restrinja o acesso às credenciais apenas às partes do sistema que efetivamente necessitam delas.
 
 <Tip>
-  Considere implementar um mecanismo de detecção de segredos no seu pipeline de CI/CD (como `git-secrets` ou `truffleHog`) para evitar que credenciais sejam commitadas acidentalmente.
+  Considere adotar um processo de revisão de código que inclua verificação de segredos antes de qualquer publicação em repositórios, evitando que credenciais sejam expostas acidentalmente.
 </Tip>

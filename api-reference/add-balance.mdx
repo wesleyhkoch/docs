@@ -1,7 +1,7 @@
 ---
-title: "API de Adição de Saldo em Customers"
+title: "Endpoints de Adição de Saldo em Customers GoMoney"
 sidebarTitle: "Adição de Saldo"
-description: "Referência completa dos endpoints de adição de saldo em customers da GoMoney API, cobrindo criação, listagem e consulta de transações."
+description: "Referência completa dos endpoints de adição de saldo em customers da GoMoney API: criação, listagem e consulta de transações por ID."
 ---
 
 Esta página descreve os endpoints da GoMoney API destinados à **adição de saldo em customers**. São três operações disponíveis: criar uma adição de saldo, listar todas as adições do usuário autenticado e consultar uma adição específica por ID.
@@ -12,21 +12,21 @@ Esta página descreve os endpoints da GoMoney API destinados à **adição de sa
 
 Todas as requisições exigem os seguintes cabeçalhos:
 
-| Cabeçalho       | Valor                                                                 |
-| --------------- | --------------------------------------------------------------------- |
-| `Authorization` | `Bearer {{accessToken}}`                                              |
-| `secret-key`    | `{{secretKeyBase64}}`                                                 |
+| Cabeçalho       | Valor                                                                    |
+| --------------- | ------------------------------------------------------------------------ |
+| `Authorization` | `Bearer {{accessToken}}`                                                 |
+| `secret-key`    | `{{secretKeyBase64}}`                                                    |
 | `Origin`        | `{{allowedOrigin}}` — deve corresponder ao domínio aprovado pelo suporte |
 
 ---
 
 ## Endpoints disponíveis
 
-| Método | Caminho                                    | Finalidade                               |
-| ------ | ------------------------------------------ | ---------------------------------------- |
-| POST   | `/transactions/add-balance`                | Adiciona saldo em um customer            |
-| GET    | `/transactions/add-balance/all`            | Lista adições do usuário autenticado     |
-| GET    | `/transactions/add-balance/{id}`           | Consulta adição específica por ID        |
+| Método | Caminho                                         | Finalidade                               |
+| ------ | ----------------------------------------------- | ---------------------------------------- |
+| POST   | `/transactions/add-balance`                     | Adiciona saldo em um customer            |
+| GET    | `/transactions/add-balance/all`                 | Lista adições do usuário autenticado     |
+| GET    | `/transactions/add-balance/{transactionId}`     | Consulta adição específica por ID        |
 
 ---
 

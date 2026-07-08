@@ -1,5 +1,5 @@
 ---
-title: "Customers: Cadastro e Gestão no GoMoney API"
+title: "Customers: Cadastro e Gestão de Clientes no GoMoney API"
 sidebarTitle: "Customers"
 description: "Entenda como cadastrar e gerenciar clientes no GoMoney API, incluindo carteiras automáticas, hierarquia de taxas PIX e ciclo de vida completo do customer."
 ---
@@ -36,7 +36,7 @@ O campo `taxId` aceita CPF e outros documentos fiscais brasileiros. Certifique-s
 O customer percorre um ciclo de vida bem definido dentro da plataforma. Compreender cada etapa é essencial para gerenciar corretamente suas operações financeiras.
 
 1. **Criação** — O customer é cadastrado com `taxId`, `name` e `email`. Um `_id` único é gerado automaticamente e uma carteira digital é provisionada imediatamente.
-2. **Uso em Operações** — O `_id` do customer é utilizado como `customerIdentifier` em operações de adição de saldo e demais transações financeiras.
+2. **Uso em Operações** — O `_id` ou o `taxId` do customer pode ser utilizado como `customerIdentifier` em operações de adição de saldo e demais transações financeiras.
 3. **Atualização** — Os dados do customer podem ser atualizados a qualquer momento, como nome, e-mail ou informações fiscais.
 4. **Exclusão Lógica** — Quando necessário, o customer pode ser desativado. O registro **não é removido fisicamente** do sistema; em vez disso, o campo `deleted` é marcado como `true`.
 
@@ -97,7 +97,7 @@ Utilize taxas no nível do customer para oferecer condições diferenciadas a cl
 
 ## O Campo `customerIdentifier` nas Operações de Saldo
 
-O `_id` gerado no momento do cadastro do customer é o valor que deve ser utilizado como `customerIdentifier` nas operações de **adição de saldo** e outras transações financeiras.
+O `customerIdentifier` utilizado nas operações de **adição de saldo** e outras transações financeiras pode ser preenchido com o `_id` gerado no cadastro do customer **ou** com o `taxId` (CPF/documento fiscal) do cliente.
 
 ### Por que isso é importante?
 
@@ -105,18 +105,18 @@ O `_id` gerado no momento do cadastro do customer é o valor que deve ser utiliz
 - **Rastreabilidade:** Cada operação fica associada a um customer específico, permitindo auditar o histórico de movimentações por cliente.
 - **Integridade financeira:** Sem o `customerIdentifier`, a operação pode não ser atribuída corretamente, comprometendo os relatórios e a contabilidade.
 
-**Exemplo de uso:**
+**Exemplos de uso:**
 
 ```json
-{
-  "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1",
-  "amount": 15000,
-  "currency": "BRL"
-}
+{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000, "currency": "BRL" }
+```
+
+```json
+{ "customerIdentifier": "123.456.789-00", "amount": 15000, "currency": "BRL" }
 ```
 
 <Note>
-Sempre utilize o `_id` retornado na criação do customer como `customerIdentifier`. Não confunda com `taxId` (CPF/documento) — o identificador correto para operações é o `_id` do registro.
+Utilize o `_id` ou o `taxId` do customer como `customerIdentifier`. O `_id` é o identificador interno gerado automaticamente na criação; o `taxId` é o CPF ou documento fiscal cadastrado. Ambos são aceitos pela plataforma.
 </Note>
 
 ---

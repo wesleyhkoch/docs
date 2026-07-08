@@ -1,7 +1,7 @@
 ---
-title: "Modelos de Erro da API GoMoney"
+title: "Referência de Erros e Códigos HTTP da GoMoney API"
 sidebarTitle: "Erros"
-description: "Referência completa dos formatos de erro retornados pela GoMoney API, incluindo autenticação, validação, negócio e rate limit."
+description: "Formatos de erro retornados pela GoMoney API: autenticação, validação, negócio e rate limit — com exemplos e boas práticas de tratamento."
 ---
 
 A GoMoney API retorna erros em formatos JSON padronizados, que variam conforme a natureza do problema. Esta página descreve cada formato, seus campos e os contextos em que são utilizados, para facilitar o tratamento de erros na sua integração.
@@ -103,6 +103,14 @@ Retornado quando o recurso existe, mas o usuário autenticado não possui permis
 }
 ```
 
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Valor `403`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem indicando que o usuário autenticado não tem permissão para operar o recurso solicitado.
+</ResponseField>
+
 ### 404 — Recurso não encontrado
 
 Retornado quando o recurso solicitado não existe na base de dados.
@@ -113,6 +121,14 @@ Retornado quando o recurso solicitado não existe na base de dados.
   "message": "Customer not found"
 }
 ```
+
+<ResponseField name="statusCode" type="integer">
+  Código HTTP do erro. Valor `404`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem descritiva indicando qual recurso não foi localizado.
+</ResponseField>
 
 ---
 

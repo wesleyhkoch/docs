@@ -1,5 +1,5 @@
 ---
-title: "Autenticar na API GoMoney"
+title: "Fluxo de Autenticação da API de Integração GoMoney"
 sidebarTitle: "Autenticação"
 description: "Referência técnica de autenticação na API de integração GoMoney: login, geração da secret-key e uso correto dos cabeçalhos de autorização."
 ---
@@ -140,6 +140,20 @@ secret-key: {{secretKeyBase64}}
 | `201`  | Login realizado com sucesso. Token retornado no corpo da resposta. |
 | `401`  | Credenciais inválidas ou acesso sem a permissão de integração ativa. |
 | `429`  | Usuário bloqueado temporariamente por excesso de tentativas de login. |
+
+<Warning>
+  Quando o limite de tentativas é atingido, a API retorna `429` com o seguinte corpo. Aguarde o tempo indicado em `message` antes de tentar novamente.
+</Warning>
+
+**Exemplo de resposta `429 Too Many Requests`:**
+
+```json
+{
+  "statusCode": 429,
+  "path": "/users/integration/login",
+  "message": "User blocked - Retry-After: 300"
+}
+```
 
 ---
 

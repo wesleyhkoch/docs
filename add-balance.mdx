@@ -1,7 +1,7 @@
 ---
-title: "Adição de Saldo — Crédito de GMC no GoMoney"
+title: "Adição de Saldo: Como Creditar Tokens GMC no GoMoney"
 sidebarTitle: "Adição de Saldo"
-description: "Saiba como creditar tokens GMC na carteira de um cliente via GoMoney API, entenda o fluxo de validação, os dados a persistir e as consultas auxiliares disponíveis."
+description: "Entenda como a Adição de Saldo credita tokens GMC em carteiras de clientes via GoMoney API, com rastreabilidade completa em blockchain."
 ---
 
 A **Adição de Saldo** é a operação responsável por creditar tokens GMC diretamente na carteira de um cliente cadastrado na plataforma GoMoney. Por meio dessa operação, integradores podem programaticamente depositar saldo em nome de um usuário, com rastreabilidade completa via hashes de confirmação em blockchain.
@@ -28,7 +28,7 @@ A operação de Adição de Saldo permite que uma integração creditada transfi
 
 ## Autenticação Necessária
 
-Esta operação exige três camadas de autenticação simultâneas:
+Esta operação exige duas camadas de autenticação simultâneas:
 
 ### Bearer Token
 
@@ -38,9 +38,9 @@ Token de sessão obtido após a autenticação do integrador na plataforma. Deve
 
 Chave secreta vinculada à integração, fornecida durante o credenciamento. Deve ser incluída no cabeçalho `secret-key` em todas as requisições. Essa chave identifica e autoriza a integração a executar operações sensíveis como créditos de saldo.
 
-### Origin
-
-O cabeçalho `Origin` da requisição deve corresponder exatamente a um dos domínios aprovados e cadastrados para a integração. Requisições originadas de domínios não autorizados serão bloqueadas independentemente das demais credenciais.
+<Note>
+  O cabeçalho `Origin` da requisição também deve corresponder a um dos domínios aprovados e cadastrados para a integração. Requisições de domínios não autorizados serão bloqueadas independentemente das credenciais de autenticação.
+</Note>
 
 ---
 
@@ -54,7 +54,9 @@ Ao submeter uma Adição de Saldo, os seguintes campos são indispensáveis:
 | `amount`               | Valor a ser creditado, expresso na moeda de referência informada.                           |
 | `currency`             | Moeda de referência do valor enviado. Valores aceitos: `BRL`, `USD`, `GMC`, `USDT`.         |
 
-> **Recomendação operacional:** inclua sempre o `customerIdentifier` e especifique explicitamente a `currency`. Isso garante rastreabilidade e evita ambiguidades no processamento do crédito.
+<Tip>
+  Inclua sempre o `customerIdentifier` e especifique explicitamente a `currency`. Isso garante rastreabilidade e evita ambiguidades no processamento do crédito.
+</Tip>
 
 ---
 
