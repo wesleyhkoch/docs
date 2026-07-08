@@ -1,0 +1,348 @@
+---
+title: "Customers API - Create, List, Update, and Remove"
+sidebarTitle: "Customers"
+description: "Manage customers linked to your GoMoney account: create records with automatic wallets, list them, update data, and perform soft deletions through REST."
+---
+
+The Customers API lets you manage the external customers linked to your GoMoney account. Each customer has a tax document (CPF or CNPJ), an automatically generated wallet address, and a traceable balance. All operations require authentication through a Bearer token and secret-key.
+
+<Note>
+  The resource hierarchy follows the order **customer → user → settings**: customers are always created under the authenticated user's context and inherit the settings defined in that user's profile. The `userId` field present on each customer identifies the user who owns the record.
+</Note>
+
+## Base URL
+
+```text
+https://gmc-api.gomoney.me/api
+```
+
+## Authentication
+
+All endpoints require the following headers:
+
+| Header          | Value                      |
+| --------------- | -------------------------- |
+| `Authorization` | `Bearer {{accessToken}}`   |
+| `secret-key`    | `{{secretKeyBase64}}`      |
+
+## Available Endpoints
+
+| Method   | Path                           | Purpose                             |
+| -------- | ------------------------------ | ----------------------------------- |
+| `POST`   | `/customers`                   | Creates a new customer              |
+| `GET`    | `/customers/all`               | Lists all active customers          |
+| `PATCH`  | `/customers/{customerId}`      | Updates a customer                  |
+| `DELETE` | `/customers/{customerId}`      | Soft-deletes a customer             |
+
+---
+
+## POST /customers - Create customer
+
+Creates a new customer associated with the authenticated user. When created, a wallet is automatically generated for the customer.
+
+### Request
+
+```http
+POST https://gmc-api.gomoney.me/api/customers
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+Content-Type: application/json
+```
+
+### Body Parameters
+
+<ParamField body="taxId" type="string" required>
+  Customer document. Accepts CPF (11 digits) or CNPJ (14 digits), numbers only.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Customer full name or legal name.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Customer email address. It must be unique within the authenticated user's context.
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "taxId": "39053344705",
+  "name": "External Customer 01",
+  "email": "cliente01@example.com"
+}
+```
+
+### Successful Response - `201 Created`
+
+<ResponseField name="_id" type="string">
+  Internal identifier of the customer. Persist this value for future operations (updates, deletions, transfers).
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  Identifier of the owner user to whom this customer is linked.
+</ResponseField>
+
+<ResponseField name="taxId" type="string">
+  Customer document (CPF or CNPJ) as sent in the request.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Customer name.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Customer email.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  Indicates whether the customer was soft-deleted. Always `false` on creation.
+</ResponseField>
+
+<ResponseField name="balance" type="object">
+  Current customer balance.
+  <Expandable title="Balance fields">
+    <ResponseField name="currency" type="string">
+      Balance currency. Always `"BRL"`.
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Balance amount. Always `0` on creation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="wallet" type="object">
+  Blockchain wallet generated automatically for the customer.
+  <Expandable title="Wallet fields">
+    <ResponseField name="address" type="string">
+      Public address of the wallet generated automatically for this customer.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "39053344705",
+  "name": "External Customer 01",
+  "email": "cliente01@example.com",
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 0 },
+  "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+}
+```
+
+### Response Codes
+
+| Code | Description                                                                  |
+| ------ | ------------------------------------------------------------------------- |
+| `201`  | Customer created successfully. Persist `_id` for future operations           |
+| `400`  | Invalid data or missing required fields                                     |
+| `401`  | Invalid token or `secret-key`                                               |
+
+---
+
+## GET /customers/all - List customers
+
+Returns the list of all active (not deleted) customers linked to the authenticated user.
+
+### Request
+
+```http
+GET https://gmc-api.gomoney.me/api/customers/all
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+### Successful Response - `200 OK`
+
+Returns an array of objects with the summary of each customer.
+
+<ResponseField name="[]" type="array">
+  List of customers linked to your account.
+  <Expandable title="Fields of each customer">
+    <ResponseField name="_id" type="string">
+      Internal identifier of the customer.
+    </ResponseField>
+    <ResponseField name="taxId" type="string">
+      Customer document (CPF or CNPJ).
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Customer full name or legal name.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Customer email address.
+    </ResponseField>
+    <ResponseField name="deleted" type="boolean">
+      Indicates whether the customer was soft-deleted.
+    </ResponseField>
+    <ResponseField name="wallet" type="object">
+      Wallet linked to the customer.
+      <Expandable title="Wallet fields">
+        <ResponseField name="address" type="string">
+          Public address of the customer's wallet.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Response Example
+
+```json
+[
+  {
+    "_id": "66f0b1b5c1f7b7dc0ce30001",
+    "taxId": "39053344705",
+    "name": "External Customer 01",
+    "email": "cliente01@example.com",
+    "deleted": false,
+    "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+  }
+]
+```
+
+### Response Codes
+
+| Code | Description                               |
+| ------ | -------------------------------------- |
+| `200`  | List returned successfully              |
+| `401`  | Invalid token or `secret-key`           |
+
+---
+
+## PATCH /customers/{customerId} - Update customer
+
+Partially updates the data of an existing customer. Only the fields sent in the body are modified.
+
+### Request
+
+```http
+PATCH https://gmc-api.gomoney.me/api/customers/{customerId}
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+Content-Type: application/json
+```
+
+### Path Parameter
+
+<ParamField path="customerId" type="string" required>
+  Internal identifier of the customer to update (`_id` returned on creation).
+</ParamField>
+
+### Body Parameters (all optional)
+
+<ParamField body="taxId" type="string">
+  New customer document (CPF or CNPJ).
+</ParamField>
+
+<ParamField body="name" type="string">
+  New customer full name or legal name.
+</ParamField>
+
+<ParamField body="email" type="string">
+  New customer email address.
+</ParamField>
+
+### Request Example
+
+```json
+{
+  "name": "External Customer 01 Updated",
+  "email": "cliente01.updated@example.com"
+}
+```
+
+### Successful Response - `200 OK`
+
+<ResponseField name="_id" type="string">
+  Internal identifier of the customer.
+</ResponseField>
+
+<ResponseField name="taxId" type="string">
+  Updated customer document (CPF or CNPJ).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Updated customer name.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Updated customer email.
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "taxId": "39053344705",
+  "name": "External Customer 01 Updated",
+  "email": "cliente01.updated@example.com"
+}
+```
+
+### Response Codes
+
+| Code | Description                                               |
+| ------ | ------------------------------------------------------ |
+| `200`  | Customer updated successfully                           |
+| `400`  | Invalid data in the request body                        |
+| `401`  | Invalid token or `secret-key`                           |
+| `403`  | The customer does not belong to the authenticated user  |
+| `404`  | Customer not found                                      |
+
+---
+
+## DELETE /customers/{customerId} - Remove customer
+
+Soft-deletes a customer. The record is **not deleted**; only the `deleted` field is changed to `true`, preserving the linked transaction history.
+
+### Request
+
+```http
+DELETE https://gmc-api.gomoney.me/api/customers/{customerId}
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+### Path Parameter
+
+<ParamField path="customerId" type="string" required>
+  Internal identifier of the customer to remove (`_id` returned on creation).
+</ParamField>
+
+### Successful Response - `200 OK`
+
+<ResponseField name="_id" type="string">
+  Internal identifier of the removed customer.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  Indicates that the customer was soft-deleted. Always `true` after this operation.
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "deleted": true
+}
+```
+
+<Note>
+  The deletion operation is **logical**: the customer is marked with `deleted: true` and no longer appears in the `GET /customers/all` list, but its transaction history remains accessible for auditing purposes.
+</Note>
+
+### Response Codes
+
+| Code | Description                                               |
+| ------ | ------------------------------------------------------ |
+| `200`  | Customer soft-deleted successfully                      |
+| `401`  | Invalid token or `secret-key`                           |
+| `403`  | The customer does not belong to the authenticated user  |
+| `404`  | Customer not found                                      |

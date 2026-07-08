@@ -1,7 +1,7 @@
 ---
 title: "Customers: Cadastro e Gestão de Clientes no GoMoney API"
 sidebarTitle: "Customers"
-description: "Entenda como cadastrar e gerenciar clientes no GoMoney API, incluindo carteiras automáticas, hierarquia de taxas PIX e ciclo de vida completo do customer."
+description: "Entenda como cadastrar e gerenciar clientes no GoMoney API, incluindo carteiras automáticas, hierarquia de taxas e ciclo de vida completo do customer."
 ---
 
 Customers são entidades externas registradas sob um usuário de integração no GoMoney API. Cada customer representa um cliente final do seu negócio e é vinculado à sua conta de integração para fins de **reconciliação financeira** e **rastreabilidade de operações**.
@@ -61,7 +61,7 @@ Ao criar um customer, o GoMoney API **provisiona automaticamente uma carteira di
 
 - **Isolamento de saldos:** Cada customer possui seu próprio saldo (`balance`), separado dos demais clientes e do saldo geral da integração.
 - **Rastreabilidade:** Todas as movimentações financeiras ficam vinculadas à carteira do customer, facilitando auditorias e reconciliações.
-- **Operações PIX:** O endereço da carteira pode ser utilizado em transações PIX, conectando o cliente final diretamente à infraestrutura de pagamentos.
+- **Operações:** O endereço da carteira pode ser utilizado em transações, conectando o cliente final diretamente à infraestrutura de pagamentos.
 
 <Note>
 A criação da carteira é automática e transparente — não é necessária nenhuma ação adicional após o cadastro do customer para que a carteira esteja disponível.
@@ -69,9 +69,9 @@ A criação da carteira é automática e transparente — não é necessária ne
 
 ---
 
-## Hierarquia de Taxas PIX
+## Hierarquia de Taxas
 
-O GoMoney API aplica taxas PIX seguindo uma hierarquia de precedência em três níveis. Isso permite personalizar as taxas cobradas para cada cliente de forma granular.
+O GoMoney API aplica taxas seguindo uma hierarquia de precedência em três níveis. Isso permite personalizar as taxas cobradas para cada cliente de forma granular.
 
 ```
 Customer (maior precedência)

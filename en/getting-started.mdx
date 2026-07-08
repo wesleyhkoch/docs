@@ -1,0 +1,78 @@
+---
+title: "Getting Started: GoMoney API Integration Guide"
+sidebarTitle: "Getting Started"
+description: "Learn how to set up your integration with the GoMoney API: prerequisites, credential flow, and recommended sequence to go into production."
+---
+
+The GoMoney API is a Brazilian fintech integration API that allows you to manage customers and add GMC token balances. This page guides you through the prerequisites, credential flow, and recommended sequence to securely push your integration to production.
+
+## Prerequisites
+
+Before starting the integration, confirm that all the items below are satisfied:
+
+- Active account on the GoMoney platform.
+- **INTEGRATION** type access created for your environment.
+- **INTEGRATION\_ONLY** permission active on the created access.
+- Access to the dashboard to consult integration keys.
+- Operational wallet registered and **approved** before going into production.
+- Application origin/domain defined and informed to support.
+
+## Recommended Sequence
+
+Follow the steps below in the presented order to ensure a consistent and secure integration.
+
+<Steps>
+  <Step title="Initial access">
+    Create an **INTEGRATION** type access on the GoMoney platform and activate the **INTEGRATION\_ONLY** permission. This type of access is the only one authorized to consume the integration API endpoints.
+  </Step>
+
+  <Step title="Request credentials">
+    Send a request to GoMoney support with the following information:
+
+    - Integrator identity (company name or technical lead name).
+    - Identifier of the created **INTEGRATION** access.
+    - Domain/origin of the application that will make the calls.
+    - Approved operational wallet that will be linked.
+    - Required flows (e.g., customer registration, balance addition).
+  </Step>
+
+  <Step title="Receive credentials">
+    The credentials — **clientKey** and **clientSecret** — are delivered **exclusively by email** by the GoMoney support team. No other channel is used for this delivery.
+
+    <Warning>
+      You are responsible for the secure storage of the credentials. Never expose them in public repositories, application logs, or unprotected environment variables. In case of compromise, contact support immediately for revocation.
+    </Warning>
+  </Step>
+
+  <Step title="Enable integration">
+    The received credentials unlock operations within the approved rules: authorized domain and linked wallet. Use the **clientSecret** in the `secret-key` header and the JWT token obtained with the **clientKey** in the `Authorization: Bearer <token>` header in all API requests.
+
+    ```
+    Base URL: [https://gmc-api.gomoney.me/api](https://gmc-api.gomoney.me/api)
+    ```
+  </Step>
+
+  <Step title="Register customers">
+    Before adding any balance, register the customers on the platform. Prior registration is mandatory — the API does not allow adding balance to an unregistered customer.
+  </Step>
+
+  <Step title="Add balances">
+    With the customers registered, perform the GMC balance addition operations. Each operation must be linked to a customer to ensure traceability and correct transaction reconciliation.
+  </Step>
+</Steps>
+
+## Pre-Production Checklist
+
+Before going live, verify all the items below with your technical team:
+
+<Note>
+  **Review this checklist before any production deployment.**
+
+  - [ ] Technical leads identified and aware of the integration flows.
+  - [ ] GoMoney support channels mapped for incident escalation.
+  - [ ] Operational wallet linked and approved.
+  - [ ] Secure credential storage policy defined and applied.
+  - [ ] Customer reconciliation strategy documented and implemented.
+  - [ ] Response strategy for authentication failures (e.g., JWT token renewal) implemented.
+  - [ ] Retry strategy for transient API unavailability defined.
+</Note>

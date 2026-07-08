@@ -1,0 +1,165 @@
+---
+title: "Customers: Customer Registration and Management in the GoMoney API"
+sidebarTitle: "Customers"
+description: "Understand how to register and manage customers in the GoMoney API, including automatic wallets, fee hierarchy, and the full customer lifecycle."
+---
+
+Customers are external entities registered under an integration user in the GoMoney API. Each customer represents an end customer of your business and is linked to your integration account for **financial reconciliation** and **operation traceability** purposes.
+
+## What is a Customer?
+
+In the GoMoney API context, a **customer** is the record of an external client associated with your integration user. It serves as the central point for organizing balances, transactions, and tax identifiers for each person or entity that operates through your integration.
+
+Customer registration is **mandatory** before performing financial operations on behalf of a client, because the customer identifier (`_id`) is used as a direct reference in balance addition operations and other transactions, ensuring that each movement is correctly assigned and tracked.
+
+### Customer Fields
+
+| Field    | Description                                               |
+|----------|-----------------------------------------------------------|
+| `_id`    | Unique customer identifier (generated automatically)      |
+| `userId` | ID of the integration user to whom the customer belongs   |
+| `taxId`  | Customer CPF or tax document                              |
+| `name`   | Customer full name                                        |
+| `email`  | Customer email address                                    |
+| `deleted`| Indicates whether the customer was soft-deleted           |
+| `balance`| Customer balance (`currency` and `amount`)                |
+| `wallet` | Linked wallet (`address`)                                 |
+
+<Note>
+The `taxId` field accepts CPF and other Brazilian tax documents. Make sure the provided document is valid and belongs to the actual customer to ensure regulatory compliance.
+</Note>
+
+---
+
+## Customer Lifecycle
+
+The customer goes through a well-defined lifecycle within the platform. Understanding each stage is essential for correctly managing your financial operations.
+
+1. **Creation** — The customer is registered with `taxId`, `name`, and `email`. A unique `_id` is generated automatically and a digital wallet is provisioned immediately.
+2. **Use in Operations** — The customer's `_id` or `taxId` can be used as `customerIdentifier` in balance addition operations and other financial transactions.
+3. **Update** — Customer data can be updated at any time, such as name, email, or tax information.
+4. **Soft Deletion** — When needed, the customer can be deactivated. The record is **not physically removed** from the system; instead, the `deleted` field is marked as `true`.
+
+```
+  Creation ──► Use in Operations ──► Update (optional)
+                                        │
+                                        ▼
+                            Soft Deletion (deleted: true)
+```
+
+<Tip>
+Always prefer soft deletion instead of trying to remove records. This preserves transaction history and ensures full traceability of operations performed by the customer.
+</Tip>
+
+---
+
+## Automatic Wallet per Customer
+
+When you create a customer, the GoMoney API **automatically provisions a digital wallet** for them. This wallet is represented by the `wallet` field, which contains the address (`address`) linked to the customer.
+
+### Why does the wallet matter?
+
+- **Balance isolation:** Each customer has their own balance (`balance`), separate from other customers and from the integration's overall balance.
+- **Traceability:** Every financial movement is linked to the customer's wallet, making audits and reconciliations easier.
+- **Operations:** The wallet address can be used in transactions, connecting the end customer directly to the payment infrastructure.
+
+<Note>
+Wallet creation is automatic and transparent. No additional action is required after customer registration for the wallet to become available.
+</Note>
+
+---
+
+## Fee Hierarchy
+
+The GoMoney API applies fees following a three-level precedence hierarchy. This lets you customize the fees charged to each customer in a granular way.
+
+```
+Customer (highest precedence)
+    │
+    ▼
+Integration User
+    │
+    ▼
+Global Settings (lowest precedence)
+```
+
+| Level                        | Description                                                               |
+|------------------------------|---------------------------------------------------------------------------|
+| **Customer**                 | Fee configured directly on the customer. It has the **highest precedence**. |
+| **Integration User**         | Default fee defined on the user. It applies when the customer has no configured fee. |
+| **Global Settings**          | Platform-wide fee. It applies when neither the customer nor the user has a defined fee. |
+
+<Tip>
+Use customer-level fees to offer differentiated conditions to specific clients, such as reduced rates for premium customers, without changing global settings or integration user settings.
+</Tip>
+
+---
+
+## The `customerIdentifier` Field in Balance Operations
+
+The `customerIdentifier` used in **balance addition** operations and other financial transactions can be filled with the `_id` generated when the customer was created **or** with the customer's `taxId` (CPF/tax document).
+
+### Why is this important?
+
+- **Correct reconciliation:** Linking `customerIdentifier` ensures the added balance is credited to the correct customer wallet.
+- **Traceability:** Each operation is associated with a specific customer, allowing you to audit the movement history per client.
+- **Financial integrity:** Without `customerIdentifier`, the operation may not be correctly assigned, compromising reports and accounting.
+
+**Usage examples:**
+
+```json
+{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000, "currency": "BRL" }
+```
+
+```json
+{ "customerIdentifier": "123.456.789-00", "amount": 15000, "currency": "BRL" }
+```
+
+<Note>
+Use the customer's `_id` or `taxId` as `customerIdentifier`. The `_id` is the internal identifier generated automatically on creation; `taxId` is the registered CPF or tax document. Both are accepted by the platform.
+</Note>
+
+---
+
+## Soft Deletion (`deleted` Flag)
+
+The GoMoney API adopts the **soft deletion** concept for customers. When you deactivate a customer, the system **does not remove the record from the database**; instead, it marks the `deleted` field as `true`.
+
+### Soft deletion implications
+
+- **History preserved:** All transactions and operations previously associated with the customer remain available for consultation and auditing.
+- **Traceability guaranteed:** Even after soft deletion, you can still identify which operations were performed by the customer.
+- **Possible reactivation:** Because it is a flag and not a physical removal, the customer can be reactivated if needed by updating the `deleted` field to `false`.
+
+```json
+{
+  "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "João da Silva",
+  "deleted": true
+}
+```
+
+<Tip>
+When listing customers in your application, always filter by `deleted: false` to display only active records and avoid operational confusion.
+</Tip>
+
+---
+
+## API References
+
+<CardGroup cols={2}>
+  <Card
+    title="Customers API"
+    icon="users"
+    href="/api-reference/customers"
+  >
+    See all available endpoints for creating, listing, updating, and soft-deleting customers.
+  </Card>
+  <Card
+    title="Balance Addition"
+    icon="circle-dollar-to-slot"
+    href="/api-reference/add-balance"
+  >
+    Learn how to add balance to a customer using `customerIdentifier` to ensure correct reconciliation.
+  </Card>
+</CardGroup>

@@ -1,7 +1,7 @@
 {
   "projectType": "api-service",
   "projectName": "GoMoney API",
-  "projectDescription": "API de integração externa da GoMoney para gerenciamento de customers e adição de saldo em GMC via PIX.",
+  "projectDescription": "API de integração externa da GoMoney para gerenciamento de customers e adição de saldo em GMC.",
   "theme": "luma",
   "primaryColor": "#B51256",
   "lightColor": "#fff0f6",
@@ -102,7 +102,7 @@
     "Gerenciamento de customers (criar, listar, atualizar, remover)",
     "Adição de saldo em GMC para customers cadastrados",
     "Consulta de transações por período ou ID",
-    "Hierarquia de taxas PIX: customer → user → settings",
+    "Hierarquia de taxas: customer → user → settings",
     "Rastreabilidade via blockchain (mintHash, approveHash, transferHash)"
   ],
   "publicApiSurface": [

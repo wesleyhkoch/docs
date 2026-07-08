@@ -1,0 +1,168 @@
+---
+title: "GoMoney Integration API Authentication Flow"
+sidebarTitle: "Authentication"
+description: "Technical authentication reference for the GoMoney integration API: login, secret-key generation, and correct use of authorization headers."
+---
+
+This page describes the authentication flow of the **GoMoney integration API**. To consume protected routes, you must obtain a JWT token through the integration login endpoint and build the `secret-key` from the credentials provided by support.
+
+## Prerequisites
+
+Before making the first authenticated call, make sure all items below are configured:
+
+1. **Integration access created** on the GoMoney platform.
+2. **Access type set to `INTEGRATION`** in the profile settings.
+3. **`INTEGRATION_ONLY` permission active** on the integration access.
+4. **`clientKey` and `clientSecret` requested from** GoMoney support by email.
+5. **Integration domain provided to support** so the `Origin` header can be approved.
+6. **Approved wallet** registered for the GMC receiving flow.
+
+---
+
+## Login Endpoint
+
+### `POST /users/integration/login`
+
+Authenticates the integration access and returns a JWT token for use on protected routes.
+
+**Full URL:**
+
+```
+https://gmc-api.gomoney.me/api/users/integration/login
+```
+
+### Request Body
+
+<ParamField body="email" type="string" required>
+  Email of the integration access registered on the GoMoney platform.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Password of the integration access registered on the GoMoney platform.
+</ParamField>
+
+### Request Example
+
+```http
+POST https://gmc-api.gomoney.me/api/users/integration/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "your-user@example.com",
+  "password": "your-password"
+}
+```
+
+### Successful Response — `201 Created`
+
+<ResponseField name="token" type="string">
+  Bearer JWT to be used in the `Authorization` header of protected routes.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Confirmation message returned by the API after successful login.
+</ResponseField>
+
+<ResponseField name="expiresIn" type="integer">
+  Token expiration timestamp in milliseconds (Unix epoch ms).
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  Unique identifier of the authenticated user.
+</ResponseField>
+
+### Response Example
+
+```json
+{
+  "token": "integration-jwt-token",
+  "title": "Successfull login.",
+  "expiresIn": 1783191600000,
+  "userId": "66f0b1b5c1f7b7dc0ce20001"
+}
+```
+
+---
+
+## Building the `secret-key`
+
+The `secret-key` is a Base64 value generated from the concatenation of `clientKey` and `clientSecret`, separated by a colon (`:`).
+
+**Format:**
+
+```
+btoa(clientKey:clientSecret)
+```
+
+**JavaScript example:**
+
+```javascript
+const clientKey    = "your-client-key";
+const clientSecret = "your-client-secret";
+
+const secretKey = btoa(`${clientKey}:${clientSecret}`);
+// Result: Base64 string to send in the secret-key header
+```
+
+**Python example:**
+
+```python
+import base64
+
+client_key    = "your-client-key"
+client_secret = "your-client-secret"
+
+secret_key = base64.b64encode(f"{client_key}:{client_secret}".encode()).decode()
+# Result: Base64 string to send in the secret-key header
+```
+
+### Header Usage
+
+After obtaining the `token` (through login) and the `secret-key` (through Base64 encoding), include both in all authenticated requests:
+
+```http
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+<Warning>
+  The `secret-key` must match the same integration access used at login. Using credentials from different origins will result in `401` or `403` errors.
+</Warning>
+
+---
+
+## Response Codes
+
+| Code | Meaning |
+|--------|-------------|
+| `201`  | Login completed successfully. Token returned in the response body. |
+| `401`  | Invalid credentials or access without the active integration permission. |
+| `429`  | User temporarily blocked due to too many login attempts. |
+
+<Warning>
+  When the attempt limit is reached, the API returns `429` with the following body. Wait for the time indicated in `message` before trying again.
+</Warning>
+
+**`429 Too Many Requests` response example:**
+
+```json
+{
+  "statusCode": 429,
+  "path": "/users/integration/login",
+  "message": "User blocked - Retry-After: 300"
+}
+```
+
+---
+
+## Common Errors
+
+Watch for the situations below, which frequently cause authentication failures:
+
+- **Logging in with the main user** instead of the integration access created specifically for the API.
+- **Access without the active `INTEGRATION_ONLY` permission**, preventing use of the integration endpoint.
+- **`clientKey` or `clientSecret` do not match** the user authenticated in the current session.
+- **Origin domain differs** from what was approved by support in the `Origin` header.
+- **Wallet not yet approved** for the GMC receiving flow, blocking subsequent operations.

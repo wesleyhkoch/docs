@@ -1,0 +1,115 @@
+---
+title: "Balance Addition: How to Credit GMC Tokens in GoMoney"
+sidebarTitle: "Balance Addition"
+description: "Understand how Balance Addition credits GMC tokens to customer wallets through the GoMoney API, with full blockchain traceability."
+---
+
+A **Balance Addition** is the operation responsible for crediting GMC tokens directly to the wallet of a customer registered on the GoMoney platform. Through this operation, integrators can programmatically deposit balance on behalf of a user, with full traceability through blockchain confirmation hashes.
+
+---
+
+## What is Balance Addition
+
+The Balance Addition operation allows an approved integration to transfer GMC tokens to the wallet of a previously registered customer. It should be used whenever the integrated system needs to:
+
+- Top up a customer's balance on the GoMoney platform;
+- Convert amounts in supported currencies (BRL, USD, USDT) into GMC tokens to be credited;
+- Record and trace credits with an internal reference and blockchain confirmation.
+
+<Warning>
+  This operation is exclusive to approved integrations (`INTEGRATION_ONLY`). Calls made without valid integration credentials will be rejected by the platform.
+</Warning>
+
+<Note>
+  For the GMC transfer to complete successfully, the customer's wallet must be approved and active on the GoMoney platform. Make sure the customer has gone through the wallet approval flow before performing a Balance Addition.
+</Note>
+
+---
+
+## Required Authentication
+
+This operation requires two authentication layers at the same time:
+
+### Bearer Token
+
+Session token obtained after the integrator authenticates on the platform. It must be sent in the `Authorization` header in the `Bearer <token>` format.
+
+### secret-key
+
+Secret key linked to the integration, provided during onboarding. It must be included in the `secret-key` header in every request. This key identifies and authorizes the integration to execute sensitive operations such as balance credits.
+
+<Note>
+  The request `Origin` header must also match one of the approved domains registered for the integration. Requests from unauthorized domains will be blocked regardless of the authentication credentials.
+</Note>
+
+---
+
+## Essential Parameters
+
+When submitting a Balance Addition, the following fields are required:
+
+| Field                  | Description                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `customerIdentifier`   | Customer identifier: the platform's internal `_id` or `taxId` (CPF/CNPJ). **Required.**   |
+| `amount`               | Amount to be credited, expressed in the provided reference currency.                        |
+| `currency`             | Reference currency for the submitted amount. Accepted values: `BRL`, `USD`, `GMC`, `USDT`. |
+
+<Tip>
+  Always include `customerIdentifier` and explicitly specify `currency`. This ensures traceability and avoids ambiguities when processing the credit.
+</Tip>
+
+---
+
+## Post-Submission Flow
+
+After the request is submitted successfully, the GoMoney platform automatically executes the following steps:
+
+1. **Data validation** — Required fields and authentication credentials are verified. Any inconsistency interrupts processing with status `FAILED`.
+2. **Wallet lookup** — The platform identifies the GMC wallet linked to the provided `customerIdentifier`.
+3. **GMC balance addition** — The corresponding amount in GMC tokens is credited to the customer's internal wallet.
+4. **Transfer to the linked wallet** — The GMC tokens are transferred to the user's wallet associated with the integration.
+5. **Blockchain hash recording** — Transaction confirmations are recorded and blockchain hashes are stored for auditing and traceability.
+
+At the end of the flow, the operation receives the `COMPLETED` status. If any step fails, the status is updated to `FAILED`.
+
+---
+
+## Data to Persist
+
+After creating a Balance Addition, you should persist the following data in the integrator system for traceability, reconciliation, and support:
+
+- **`_id`** — Internal identifier of the Balance Addition operation on the GoMoney platform.
+- **Customer link** — Reference to the `customerIdentifier` used (`_id` or `taxId`).
+- **Correlation reference** — External identifier or order number from the integrator system associated with the operation.
+- **Current status** — Operation state (`COMPLETED` or `FAILED`), to be updated based on the platform response.
+- **Relevant timestamps** — Operation creation (`createdAt`) and update (`updatedAt`) date and time.
+
+---
+
+## Supporting Queries
+
+The GoMoney API provides endpoints to query Balance Addition operations:
+
+- **Operation list** — Returns all Balance Addition operations associated with a given customer or integration, with support for filters and pagination.
+- **Single query** — Returns the full details of a specific operation by its `_id`, including current status, blockchain hashes, and timestamps.
+
+---
+
+## References
+
+<CardGroup cols={2}>
+  <Card
+    title="Balance Addition API"
+    icon="circle-dollar-to-slot"
+    href="/api-reference/add-balance"
+  >
+    See the complete reference for endpoints, parameters, and request examples for the Balance Addition operation.
+  </Card>
+  <Card
+    title="Customers"
+    icon="users"
+    href="/customers"
+  >
+    Learn how to register and manage customers on the GoMoney platform before performing credit operations.
+  </Card>
+</CardGroup>

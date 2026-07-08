@@ -1,0 +1,75 @@
+---
+title: "Overview: GoMoney Integration API for Partners"
+sidebarTitle: "Overview"
+description: "Overview of the GoMoney integration API: prerequisites, recommended technical sequence, and navigation through the available resources."
+---
+
+This section documents the **GoMoney integration API**, allowing partners to perform programmatic operations such as authentication, customer management, and balance addition. All requests must be sent to the base URL below.
+
+<Note>
+  **Base URL**
+
+  ```
+  https://gmc-api.gomoney.me/api
+  ```
+</Note>
+
+## Access Prerequisites
+
+Before consuming any API route, make sure the following requirements are met:
+
+- **INTEGRATION access type** created on the GoMoney platform.
+- **`INTEGRATION_ONLY` permission** active on the integration access.
+- **Email and password** for the integration access to authenticate via API.
+- **`clientKey` and `clientSecret`** provided by GoMoney support.
+- **Approved domain** to be used in the `Origin` request header.
+- **Registered and approved wallet** for the GMC receiving flow.
+
+## Recommended Technical Sequence
+
+Follow the order below to ensure a correct, unblocked integration:
+
+1. **Create the integration access** on the GoMoney platform with the `INTEGRATION` type.
+2. **Confirm that the `INTEGRATION_ONLY` permission** is active on the created access.
+3. **Request from support** the `clientKey`, `clientSecret`, and approval for the origin domain.
+4. **Confirm that the operational wallet** is registered and approved for receiving.
+5. **Log in through the API** using the integration access credentials.
+6. **Build the `secret-key`** by Base64-encoding the `clientKey:clientSecret` pair: `btoa(clientKey:clientSecret)`.
+7. **Register or locate the customer** that will serve as the reference in financial reconciliation.
+8. **Create a balance addition** by providing the corresponding customer's `customerIdentifier`.
+9. **Query the list or detail** of the balance addition to monitor the operational lifecycle.
+
+## Navigation
+
+<CardGroup cols={2}>
+  <Card title="Autenticação" href="/api-reference/authentication" icon="lock">
+    Learn how to authenticate in the API using the integration access and how to build the `secret-key`.
+  </Card>
+  <Card title="Customers" href="/api-reference/customers" icon="users">
+    Manage the customers linked to your integration for financial reconciliation.
+  </Card>
+  <Card title="Balance Addition" href="/api-reference/add-balance" icon="circle-dollar-to-slot">
+    Create and track balance addition operations linked to a customer.
+  </Card>
+  <Card title="Erros" href="/api-reference/errors" icon="triangle-exclamation">
+    Review the error codes returned by the API and how to handle them.
+  </Card>
+</CardGroup>
+
+## Usage Notes
+
+<Note>
+  The **access token** used in requests must be obtained exclusively by logging in with an `INTEGRATION` access that has the `INTEGRATION_ONLY` permission active.
+</Note>
+
+<Note>
+  The **authenticated session**, the **`secret-key`**, and the **authorized domain** must represent the same integration. Mixing credentials from different origins will result in authorization errors.
+</Note>
+
+<Note>
+  The **operational wallet** must be registered and approved before any balance addition operation can succeed.
+</Note>
+
+<Note>
+  The **`customerIdentifier`** field is required in all balance addition operations and must match a customer previously registered in the integration.
+</Note>

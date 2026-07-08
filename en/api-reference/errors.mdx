@@ -1,0 +1,186 @@
+---
+title: "GoMoney API Error and HTTP Code Reference"
+sidebarTitle: "Errors"
+description: "Error formats returned by the GoMoney API: authentication, validation, business logic, and rate limit, with examples and handling best practices."
+---
+
+The GoMoney API returns errors in standardized JSON formats, which vary depending on the nature of the problem. This page describes each format, its fields, and the contexts in which it is used to make error handling easier in your integration.
+
+---
+
+## Login Authentication Error Format
+
+Returned when login credentials are invalid (incorrect username or password).
+
+```json
+{
+  "statusCode": 401,
+  "timestamp": 1783188000000,
+  "path": "/users/integration/login",
+  "message": "Invalid user or password."
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. In this case, always `401`.
+</ResponseField>
+
+<ResponseField name="timestamp" type="integer">
+  Unix timestamp in milliseconds indicating when the error occurred.
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Path of the endpoint that generated the error.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Descriptive error message returned by the API.
+</ResponseField>
+
+---
+
+## Generic Authentication Error Format
+
+Returned when the session has expired or an integration credential (Bearer token, `secret-key`, or `Origin`) is rejected.
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid API access key"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. Value `401`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Message indicating which credential was rejected or that the token is invalid/expired.
+</ResponseField>
+
+---
+
+## Validation Error Format
+
+Returned when the request body does not match the expected contract, such as missing fields, incorrect types, or values outside the allowed domain.
+
+```json
+{
+  "statusCode": 400,
+  "message": ["email must be an email"],
+  "error": "Bad Request"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. Value `400`.
+</ResponseField>
+
+<ResponseField name="message" type="string | array of strings">
+  Description of the validation issue. It can be a simple string or an array of strings when multiple fields have errors at the same time.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  HTTP error category. Usually `"Bad Request"`.
+</ResponseField>
+
+<Note>
+  The `message` field can be either a `string` or an `array of strings`. Make sure your implementation handles both cases.
+</Note>
+
+---
+
+## Business Errors
+
+### 403 - No permission to operate the resource
+
+Returned when the resource exists, but the authenticated user does not have permission to operate it.
+
+```json
+{
+  "statusCode": 403,
+  "message": "You do not have access to this customer"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. Value `403`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Message indicating that the authenticated user does not have permission to operate the requested resource.
+</ResponseField>
+
+### 404 - Resource not found
+
+Returned when the requested resource does not exist in the database.
+
+```json
+{
+  "statusCode": 404,
+  "message": "Customer not found"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. Value `404`.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Descriptive message indicating which resource was not found.
+</ResponseField>
+
+---
+
+## Rate limit - 429
+
+Returned when the attempt limit is exceeded for a given endpoint or user. The `message` field indicates the wait time in seconds before a new attempt is allowed.
+
+```json
+{
+  "statusCode": 429,
+  "path": "/users/integration/login",
+  "message": "User blocked - Retry-After: 300"
+}
+```
+
+<ResponseField name="statusCode" type="integer">
+  HTTP error code. Value `429`.
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Path of the endpoint that applied the rate-limit block.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Message indicating the block and the time (in seconds) until new attempts are allowed.
+</ResponseField>
+
+---
+
+## Error Handling Best Practices
+
+<Tip>
+  **Log the path and transaction ID.** Always store the called endpoint `path` and the operational transaction identifier (`_id`) to make traceability and support easier.
+</Tip>
+
+<Note>
+  - **Do not perform automatic retries** for authentication (`401`, `403`) and validation (`400`) errors. These errors indicate issues in the payload or credentials that must be fixed before another attempt.
+  - **Use controlled retries** only for transient unavailability (`503`), with exponential backoff and a defined retry limit.
+  - For `429` errors, respect the time indicated in the `message` field (`Retry-After` field) before trying again.
+</Note>
+
+---
+
+## HTTP Code Table
+
+| Code | Meaning                                             |
+| ------ | ------------------------------------------------- |
+| `201`  | Resource created successfully                      |
+| `400`  | Invalid body or validation failed                  |
+| `401`  | Invalid credentials or expired token               |
+| `403`  | No permission to operate the resource              |
+| `404`  | Resource not found                                 |
+| `417`  | Resource not linked to the authenticated user      |
+| `429`  | Attempt limit exceeded                             |
+| `503`  | Service temporarily unavailable                    |
