@@ -3,46 +3,95 @@
   "projectName": "GoMoney API",
   "projectDescription": "API de integração externa da GoMoney para gerenciamento de customers e adição de saldo em GMC via PIX.",
   "theme": "luma",
-  "primaryColor": "#ef7025",
-  "lightColor": "#eec9bc",
-  "darkColor": "#4fa1ab",
-  "navigation": {
-    "tabs": [
+  "primaryColor": "#B51256",
+  "lightColor": "#fff0f6",
+  "darkColor": "#B51256",
+   "navigation": {
+    "languages": [
       {
-        "tab": "Guias",
-        "groups": [
+        "language": "pt-BR",
+        "default": true,
+        "tabs": [
           {
-            "group": "Introdução",
-            "pages": ["welcome", "getting-started"]
+            "tab": "Guias",
+            "groups": [
+              {
+                "group": "Introdução",
+                "pages": ["index", "getting-started"]
+              },
+              {
+                "group": "Conceitos",
+                "pages": ["authentication", "customers", "add-balance"]
+              }
+            ]
           },
           {
-            "group": "Conceitos",
-            "pages": ["authentication", "customers", "add-balance"]
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Visão Geral",
+                "pages": ["api-reference/overview"]
+              },
+              {
+                "group": "Autenticação",
+                "pages": ["api-reference/authentication"]
+              },
+              {
+                "group": "Clientes",
+                "pages": ["api-reference/customers"]
+              },
+              {
+                "group": "Adição de Saldo",
+                "pages": ["api-reference/add-balance"]
+              },
+              {
+                "group": "Erros",
+                "pages": ["api-reference/errors"]
+              }
+            ]
           }
         ]
       },
       {
-        "tab": "API Reference",
-        "groups": [
+        "language": "en",
+        "tabs": [
           {
-            "group": "Visão Geral",
-            "pages": ["api-reference/overview"]
+            "tab": "Guides",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": ["en/index", "en/getting-started"]
+              },
+              {
+                "group": "Concepts",
+                "pages": ["en/authentication", "en/customers", "en/add-balance"]
+              }
+            ]
           },
           {
-            "group": "Autenticação",
-            "pages": ["api-reference/authentication"]
-          },
-          {
-            "group": "Customers",
-            "pages": ["api-reference/customers"]
-          },
-          {
-            "group": "Adição de Saldo",
-            "pages": ["api-reference/add-balance"]
-          },
-          {
-            "group": "Erros",
-            "pages": ["api-reference/errors"]
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": ["en/api-reference/overview"]
+              },
+              {
+                "group": "Authentication",    
+                "pages": ["en/api-reference/authentication"]
+              },
+              {
+                "group": "Customers",
+                "pages": ["en/api-reference/customers"]
+              },
+              {
+                "group": "Add Balance",
+                "pages": ["en/api-reference/add-balance"]
+              },
+              {
+                "group": "Errors",  
+                "pages": ["en/api-reference/errors"]
+              }
+            ]
           }
         ]
       }
