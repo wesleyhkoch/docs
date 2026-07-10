@@ -51,11 +51,10 @@ When submitting a Balance Addition, the following fields are required:
 | Field                  | Description                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------------- |
 | `customerIdentifier`   | Customer identifier: the platform's internal `_id` or `taxId` (CPF/CNPJ). **Required.**   |
-| `amount`               | Amount to be credited, expressed in the provided reference currency.                        |
-| `currency`             | Reference currency for the submitted amount. Accepted values: `BRL`, `USD`, `GMC`, `USDT`. |
+| `amount`               | Amount to be credited, in BRL.                        |
 
 <Tip>
-  Always include `customerIdentifier` and explicitly specify `currency`. This ensures traceability and avoids ambiguities when processing the credit.
+  Always include `customerIdentifier`. This ensures traceability and avoids ambiguities when processing the credit.
 </Tip>
 
 ---

@@ -14,19 +14,27 @@ Customer registration is **mandatory** before performing financial operations on
 
 ### Customer Fields
 
-| Field    | Description                                               |
-|----------|-----------------------------------------------------------|
-| `_id`    | Unique customer identifier (generated automatically)      |
-| `userId` | ID of the integration user to whom the customer belongs   |
-| `taxId`  | Customer CPF or tax document                              |
-| `name`   | Customer full name                                        |
-| `email`  | Customer email address                                    |
-| `deleted`| Indicates whether the customer was soft-deleted           |
-| `balance`| Customer balance (`currency` and `amount`)                |
-| `wallet` | Linked wallet (`address`)                                 |
+| Field | Description |
+| --- | --- |
+| `_id` | Unique customer identifier (automatically generated) |
+| `userId` | ID of the integration user to which the customer belongs |
+| `taxId` | Client's CPF, tax document, or ID/Passport |
+| `name` | Client's full name |
+| `email` | Client's email address |
+| `phone` | Client's contact phone number |
+| `accountType` | Indicates whether the client is an individual (PF) or a legal entity (PJ) |
+| `company` | Company information, if the client is a legal entity (Object) |
+| `partners` | Array of objects with the company's partners information, if the client is a legal entity |
+| `birthDate` | Date of birth information, if the client is an individual |
+| `country` | Client's country information |
+| `documents` | Array for sending documents and their types |
+| `address` | Client's address information (Object) |
+| `deleted` | Indicates if the customer was logically deleted |
+| `balance` | Customer balance (`currency` and `amount`) |
+| `wallet` | Associated wallet (`address`) |
 
 <Note>
-The `taxId` field accepts CPF and other Brazilian tax documents. Make sure the provided document is valid and belongs to the actual customer to ensure regulatory compliance.
+The `taxId` field accepts CPF and other Brazilian and foreigner tax documents. Make sure the provided document is valid and belongs to the actual customer to ensure regulatory compliance.
 </Note>
 
 ---
@@ -108,11 +116,11 @@ The `customerIdentifier` used in **balance addition** operations and other finan
 **Usage examples:**
 
 ```json
-{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000, "currency": "BRL" }
+{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000 }
 ```
 
 ```json
-{ "customerIdentifier": "123.456.789-00", "amount": 15000, "currency": "BRL" }
+{ "customerIdentifier": "123.456.789-00", "amount": 15000 }
 ```
 
 <Note>

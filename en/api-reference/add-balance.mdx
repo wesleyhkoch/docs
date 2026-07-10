@@ -52,10 +52,6 @@ Content-Type: application/json
   Identifier of the recipient customer. It can be the internal `_id` or the `taxId` (CPF/CNPJ).
 </ParamField>
 
-<ParamField body="currency" type="enum" required>
-  Currency of the provided amount. Accepted values: `BRL`, `USD`, `GMC`, `USDT`.
-</ParamField>
-
 ### Request Example
 
 ```json
@@ -63,8 +59,7 @@ Content-Type: application/json
   "items": [
     {
       "amount": 1000,
-      "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001",
-      "currency": "GMC"
+      "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001"
     }
   ]
 }
@@ -133,11 +128,7 @@ Content-Type: application/json
         </ResponseField>
 
         <ResponseField name="sourceAmount" type="number">
-          Source amount provided in the request.
-        </ResponseField>
-
-        <ResponseField name="sourceCurrency" type="string">
-          Source currency of the transaction.
+          Source amount provided in BRL.
         </ResponseField>
 
         <ResponseField name="targetGmcAmount" type="string">
@@ -172,16 +163,6 @@ Content-Type: application/json
             <ResponseField name="fixedFeeSource" type="string">Source of the fixed fee.</ResponseField>
             <ResponseField name="percentageFeeSource" type="string">Source of the percentage fee.</ResponseField>
             <ResponseField name="issueTaxSource" type="string">Source of the issuance fee.</ResponseField>
-          </Expandable>
-        </ResponseField>
-
-        <ResponseField name="conversion" type="object">
-          Currency conversion data used in the transaction.
-
-          <Expandable title="Conversion fields">
-            <ResponseField name="brlPerGmc" type="number">BRL per GMC exchange rate.</ResponseField>
-            <ResponseField name="usdtBrlRate" type="number">USDT/BRL exchange rate.</ResponseField>
-            <ResponseField name="sourceAmountBrl" type="number">Source amount converted to BRL.</ResponseField>
           </Expandable>
         </ResponseField>
 
@@ -230,7 +211,6 @@ Content-Type: application/json
       {
         "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001",
         "sourceAmount": 1000,
-        "sourceCurrency": "GMC",
         "targetGmcAmount": "1000",
         "status": "COMPLETED",
         "error": null,

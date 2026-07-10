@@ -1,13 +1,13 @@
 ---
-title: "Customers API - Create, List, Update, and Remove"
+title: "Customers API — Create, List, Update, and Delete"
 sidebarTitle: "Customers"
-description: "Manage customers linked to your GoMoney account: create records with automatic wallets, list them, update data, and perform soft deletions through REST."
+description: "Manage customers linked to your GoMoney account: create records with an automatic wallet, list them, update their data, and perform logical deletions via REST."
 ---
 
-The Customers API lets you manage the external customers linked to your GoMoney account. Each customer has a tax document (CPF or CNPJ), an automatically generated wallet address, and a traceable balance. All operations require authentication through a Bearer token and secret-key.
+The Customers API lets you manage the external customers linked to your GoMoney account. Each customer has a tax document (CPF, CNPJ, or ID/Passport), an automatically generated wallet address, and a trackable balance. All operations require authentication via Bearer token and secret-key.
 
 <Note>
-  The resource hierarchy follows the order **customer → user → settings**: customers are always created under the authenticated user's context and inherit the settings defined in that user's profile. The `userId` field present on each customer identifies the user who owns the record.
+  The resource hierarchy follows the order **customer → user → settings**: customers are always created under the context of the authenticated user and inherit the settings defined in their profile. The `userId` field present in each customer identifies the user who owns the record.
 </Note>
 
 ## Base URL
@@ -20,250 +20,867 @@ https://gmc-api.gomoney.me/api
 
 All endpoints require the following headers:
 
-| Header          | Value                      |
-| --------------- | -------------------------- |
-| `Authorization` | `Bearer {{accessToken}}`   |
-| `secret-key`    | `{{secretKeyBase64}}`      |
+<ParamField header="Authorization" type="string" required>
+  Access token in the format `Bearer {{accessToken}}`.
+</ParamField>
 
-## Available Endpoints
+<ParamField header="secret-key" type="string" required>
+  Account secret key, Base64-encoded: `{{secretKeyBase64}}`.
+</ParamField>
 
-| Method   | Path                           | Purpose                             |
-| -------- | ------------------------------ | ----------------------------------- |
-| `POST`   | `/customers`                   | Creates a new customer              |
-| `GET`    | `/customers/all`               | Lists all active customers          |
-| `PATCH`  | `/customers/{customerId}`      | Updates a customer                  |
-| `DELETE` | `/customers/{customerId}`      | Soft-deletes a customer             |
+## Available endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/customers` | Creates a new customer |
+| `GET` | `/customers/all` | Lists all active customers |
+| `GET` | `/customers/{customerId}` | Retrieves a specific customer by ID |
+| `PATCH` | `/customers/{customerId}` | Updates a customer |
+| `DELETE` | `/customers/{customerId}` | Logically removes a customer |
 
 ---
 
-## POST /customers - Create customer
+## POST /customers
 
-Creates a new customer associated with the authenticated user. When created, a wallet is automatically generated for the customer.
+Creates a new customer associated with the authenticated user. Once created, a wallet is automatically generated for the customer.
 
-### Request
+<ParamField header="Authorization" type="string" required>
+  `Bearer {{accessToken}}`
+</ParamField>
 
-```http
-POST https://gmc-api.gomoney.me/api/customers
-Authorization: Bearer {{accessToken}}
-secret-key: {{secretKeyBase64}}
-Content-Type: application/json
-```
+<ParamField header="secret-key" type="string" required>
+  `{{secretKeyBase64}}`
+</ParamField>
 
-### Body Parameters
+<ParamField header="Content-Type" type="string" required>
+  `application/json`
+</ParamField>
+
+### Body
 
 <ParamField body="taxId" type="string" required>
-  Customer document. Accepts CPF (11 digits) or CNPJ (14 digits), numbers only.
+  Customer's tax document (CPF, CNPJ, or ID/Passport).
+</ParamField>
+
+<ParamField body="accountType" type="string" required>
+  Customer's account type. Possible values: `PF` (individual) or `PJ` (business).
 </ParamField>
 
 <ParamField body="name" type="string" required>
-  Customer full name or legal name.
+  Customer's name (legal/company name, in the case of `PJ`).
 </ParamField>
 
 <ParamField body="email" type="string" required>
-  Customer email address. It must be unique within the authenticated user's context.
+  Customer's contact email.
 </ParamField>
 
-### Request Example
+<ParamField body="phone" type="string" required>
+  Customer's contact phone number (area code + number, no formatting).
+</ParamField>
 
-```json
-{
-  "taxId": "39053344705",
-  "name": "External Customer 01",
-  "email": "cliente01@example.com"
-}
-```
+<ParamField body="birthDate" type="string">
+  Customer's date of birth. Applicable only when `accountType` is `PF`. Format `YYYY-MM-DD`.
+</ParamField>
 
-### Successful Response - `201 Created`
+<ParamField body="company" type="object">
+  Company data. Required when `accountType` is `PJ`.
+
+  <Expandable title="company properties">
+    <ParamField body="companyName" type="string">
+      Company's legal name.
+    </ParamField>
+    <ParamField body="tradingName" type="string">
+      Company's trading name (DBA).
+    </ParamField>
+    <ParamField body="fieldOfActivity" type="string">
+      Company's field of activity.
+    </ParamField>
+    <ParamField body="email" type="string">
+      Company's contact email.
+    </ParamField>
+    <ParamField body="phone" type="string">
+      Company's contact phone number.
+    </ParamField>
+    <ParamField body="phoneDdi" type="string">
+      Company's phone country calling code (e.g. `+55`).
+    </ParamField>
+    <ParamField body="website" type="string">
+      Company's website.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="partners" type="object[]">
+  List of company partners. Applicable only when `accountType` is `PJ`.
+
+  <Expandable title="properties of each partner">
+    <ParamField body="name" type="string">
+      Partner's first name.
+    </ParamField>
+    <ParamField body="lastName" type="string">
+      Partner's last name.
+    </ParamField>
+    <ParamField body="jobTitle" type="string">
+      Partner's job title at the company.
+    </ParamField>
+    <ParamField body="dateOfBirth" type="string">
+      Partner's date of birth. Format `YYYY-MM-DD`.
+    </ParamField>
+    <ParamField body="email" type="string">
+      Partner's email.
+    </ParamField>
+    <ParamField body="phone" type="string">
+      Partner's phone number.
+    </ParamField>
+    <ParamField body="isPoliticallyExposedPerson" type="boolean">
+      Indicates whether the partner is a politically exposed person.
+    </ParamField>
+    <ParamField body="isAmericanCitizen" type="boolean">
+      Indicates whether the partner holds American citizenship.
+    </ParamField>
+    <ParamField body="identityDocument" type="object">
+      Partner's identity document.
+
+      <Expandable title="identityDocument properties">
+        <ParamField body="documentValue" type="string">
+          Identity document number.
+        </ParamField>
+        <ParamField body="documentType" type="string">
+          Document type (e.g. `RG`).
+        </ParamField>
+        <ParamField body="documentBase64Image" type="string">
+          Document image, Base64-encoded.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="address" type="object" required>
+  Customer's address.
+
+  <Expandable title="address properties">
+    <ParamField body="street" type="string" required>
+      Street/avenue name.
+    </ParamField>
+    <ParamField body="number" type="string" required>
+      Address number.
+    </ParamField>
+    <ParamField body="district" type="string" required>
+      District/neighborhood.
+    </ParamField>
+    <ParamField body="postalCode" type="string" required>
+      Postal code in the format `00000-000`.
+    </ParamField>
+    <ParamField body="city" type="object" required>
+      <Expandable title="city properties">
+        <ParamField body="name" type="string" required>
+          City name.
+        </ParamField>
+        <ParamField body="state" type="string" required>
+          State abbreviation.
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country code following the **ISO 3166-1 alpha-2** standard (two uppercase letters, e.g. `BR`).
+</ParamField>
+
+<ParamField body="documents" type="object[]">
+  List of documents submitted for review/approval.
+
+  <Expandable title="properties of each document">
+    <ParamField body="type" type="enum<string>">
+      Document type. Possible values:
+      - `CUSTOMER_IDENTIFY` — customer's identification document
+      - `SOCIAL_CONTRACT` — articles of association
+      - `CONSTITUTIONAL_DOCUMENT` — constitutional document
+      - `PARTNER_ID` — partner's identification document
+      - `OTHER` — other document type
+    </ParamField>
+    <ParamField body="imageBase64" type="string">
+      Document image, Base64-encoded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
 
 <ResponseField name="_id" type="string">
-  Internal identifier of the customer. Persist this value for future operations (updates, deletions, transfers).
+  Customer's internal identifier.
 </ResponseField>
 
 <ResponseField name="userId" type="string">
-  Identifier of the owner user to whom this customer is linked.
+  Identifier of the user who owns the customer.
 </ResponseField>
 
 <ResponseField name="taxId" type="string">
-  Customer document (CPF or CNPJ) as sent in the request.
+  Customer's tax document.
+</ResponseField>
+
+<ResponseField name="accountType" type="string">
+  Account type: `PF` or `PJ`.
 </ResponseField>
 
 <ResponseField name="name" type="string">
-  Customer name.
+  Customer's name.
 </ResponseField>
 
 <ResponseField name="email" type="string">
-  Customer email.
+  Customer's email.
 </ResponseField>
 
-<ResponseField name="deleted" type="boolean">
-  Indicates whether the customer was soft-deleted. Always `false` on creation.
+<ResponseField name="phone" type="string">
+  Customer's phone number.
 </ResponseField>
 
-<ResponseField name="balance" type="object">
-  Current customer balance.
-  <Expandable title="Balance fields">
-    <ResponseField name="currency" type="string">
-      Balance currency. Always `"BRL"`.
+<ResponseField name="company" type="object">
+  Company data, present when `accountType` is `PJ`.
+
+  <Expandable title="company properties">
+    <ResponseField name="companyName" type="string">
+      Company's legal name.
     </ResponseField>
-    <ResponseField name="amount" type="number">
-      Balance amount. Always `0` on creation.
+    <ResponseField name="tradingName" type="string">
+      Company's trading name (DBA).
     </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="wallet" type="object">
-  Blockchain wallet generated automatically for the customer.
-  <Expandable title="Wallet fields">
-    <ResponseField name="address" type="string">
-      Public address of the wallet generated automatically for this customer.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-### Response Example
-
-```json
-{
-  "_id": "66f0b1b5c1f7b7dc0ce30001",
-  "userId": "66f0b1b5c1f7b7dc0ce20001",
-  "taxId": "39053344705",
-  "name": "External Customer 01",
-  "email": "cliente01@example.com",
-  "deleted": false,
-  "balance": { "currency": "BRL", "amount": 0 },
-  "wallet": { "address": "0x2222222222222222222222222222222222222222" }
-}
-```
-
-### Response Codes
-
-| Code | Description                                                                  |
-| ------ | ------------------------------------------------------------------------- |
-| `201`  | Customer created successfully. Persist `_id` for future operations           |
-| `400`  | Invalid data or missing required fields                                     |
-| `401`  | Invalid token or `secret-key`                                               |
-
----
-
-## GET /customers/all - List customers
-
-Returns the list of all active (not deleted) customers linked to the authenticated user.
-
-### Request
-
-```http
-GET https://gmc-api.gomoney.me/api/customers/all
-Authorization: Bearer {{accessToken}}
-secret-key: {{secretKeyBase64}}
-```
-
-### Successful Response - `200 OK`
-
-Returns an array of objects with the summary of each customer.
-
-<ResponseField name="[]" type="array">
-  List of customers linked to your account.
-  <Expandable title="Fields of each customer">
-    <ResponseField name="_id" type="string">
-      Internal identifier of the customer.
-    </ResponseField>
-    <ResponseField name="taxId" type="string">
-      Customer document (CPF or CNPJ).
-    </ResponseField>
-    <ResponseField name="name" type="string">
-      Customer full name or legal name.
+    <ResponseField name="fieldOfActivity" type="string">
+      Company's field of activity.
     </ResponseField>
     <ResponseField name="email" type="string">
-      Customer email address.
+      Company's contact email.
     </ResponseField>
-    <ResponseField name="deleted" type="boolean">
-      Indicates whether the customer was soft-deleted.
+    <ResponseField name="phone" type="string">
+      Company's contact phone number.
     </ResponseField>
-    <ResponseField name="wallet" type="object">
-      Wallet linked to the customer.
-      <Expandable title="Wallet fields">
-        <ResponseField name="address" type="string">
-          Public address of the customer's wallet.
+    <ResponseField name="phoneDdi" type="string">
+      Company's phone country calling code.
+    </ResponseField>
+    <ResponseField name="website" type="string">
+      Company's website.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="partners" type="object[]">
+  List of partners, present when `accountType` is `PJ`.
+
+  <Expandable title="properties of each partner">
+    <ResponseField name="name" type="string">
+      Partner's first name.
+    </ResponseField>
+    <ResponseField name="lastName" type="string">
+      Partner's last name.
+    </ResponseField>
+    <ResponseField name="jobTitle" type="string">
+      Partner's job title.
+    </ResponseField>
+    <ResponseField name="dateOfBirth" type="string">
+      Partner's date of birth.
+    </ResponseField>
+    <ResponseField name="identityDocument" type="object">
+      <Expandable title="identityDocument properties">
+        <ResponseField name="documentValue" type="string">
+          Document number.
+        </ResponseField>
+        <ResponseField name="documentType" type="string">
+          Document type.
+        </ResponseField>
+        <ResponseField name="documentImage" type="string">
+          URL of the stored document image.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Partner's email.
+    </ResponseField>
+    <ResponseField name="phone" type="string">
+      Partner's phone number.
+    </ResponseField>
+    <ResponseField name="isPoliticallyExposedPerson" type="boolean">
+      Indicates whether the partner is a politically exposed person.
+    </ResponseField>
+    <ResponseField name="isAmericanCitizen" type="boolean">
+      Indicates whether the partner holds American citizenship.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="address" type="object">
+  <Expandable title="address properties">
+    <ResponseField name="street" type="string">
+      Street/avenue name.
+    </ResponseField>
+    <ResponseField name="number" type="string">
+      Address number.
+    </ResponseField>
+    <ResponseField name="district" type="string">
+      District/neighborhood.
+    </ResponseField>
+    <ResponseField name="postalCode" type="string">
+      Postal code.
+    </ResponseField>
+    <ResponseField name="city" type="object">
+      <Expandable title="city properties">
+        <ResponseField name="name" type="string">
+          City name.
+        </ResponseField>
+        <ResponseField name="state" type="string">
+          State abbreviation.
         </ResponseField>
       </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-### Response Example
+<ResponseField name="country" type="object">
+  <Expandable title="country properties">
+    <ResponseField name="code" type="string">
+      Country code following the **ISO 3166-1 alpha-2** standard (e.g. `BR`).
+    </ResponseField>
+    <ResponseField name="name_pt" type="string">
+      Country name in Portuguese.
+    </ResponseField>
+    <ResponseField name="ddi" type="string">
+      Country's calling code.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
-```json
-[
-  {
-    "_id": "66f0b1b5c1f7b7dc0ce30001",
-    "taxId": "39053344705",
-    "name": "External Customer 01",
-    "email": "cliente01@example.com",
-    "deleted": false,
-    "wallet": { "address": "0x2222222222222222222222222222222222222222" }
-  }
-]
-```
+<ResponseField name="documents" type="object[]">
+  <Expandable title="properties of each document">
+    <ResponseField name="_id" type="string">
+      Document's internal identifier.
+    </ResponseField>
+    <ResponseField name="documentType" type="enum<string>">
+      Document type. Possible values: `CUSTOMER_IDENTIFY`, `SOCIAL_CONTRACT`, `CONSTITUTIONAL_DOCUMENT`, `PARTNER_ID`, `OTHER`.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Document review status (e.g. `APPROVED`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
-### Response Codes
+<ResponseField name="deleted" type="boolean">
+  Indicates whether the customer has been logically removed.
+</ResponseField>
 
-| Code | Description                               |
-| ------ | -------------------------------------- |
-| `200`  | List returned successfully              |
-| `401`  | Invalid token or `secret-key`           |
+<ResponseField name="balance" type="object">
+  <Expandable title="balance properties">
+    <ResponseField name="currency" type="string">
+      Balance currency (e.g. `BRL`).
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Balance amount.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
----
+<ResponseField name="wallet" type="object">
+  <Expandable title="wallet properties">
+    <ResponseField name="address" type="string">
+      Wallet address automatically generated for the customer.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
-## PATCH /customers/{customerId} - Update customer
-
-Partially updates the data of an existing customer. Only the fields sent in the body are modified.
-
-### Request
-
-```http
-PATCH https://gmc-api.gomoney.me/api/customers/{customerId}
-Authorization: Bearer {{accessToken}}
-secret-key: {{secretKeyBase64}}
-Content-Type: application/json
-```
-
-### Path Parameter
-
-<ParamField path="customerId" type="string" required>
-  Internal identifier of the customer to update (`_id` returned on creation).
-</ParamField>
-
-### Body Parameters (all optional)
-
-<ParamField body="taxId" type="string">
-  New customer document (CPF or CNPJ).
-</ParamField>
-
-<ParamField body="name" type="string">
-  New customer full name or legal name.
-</ParamField>
-
-<ParamField body="email" type="string">
-  New customer email address.
-</ParamField>
-
-### Request Example
-
-```json
+<RequestExample>
+```json PF example
 {
-  "name": "External Customer 01 Updated",
-  "email": "cliente01.updated@example.com"
+  "taxId": "39053344705",
+  "accountType": "PF",
+  "name": "Maria Fernanda Souza",
+  "email": "maria.souza@example.com",
+  "phone": "11999998888",
+  "birthDate": "1992-07-14",
+  "address": {
+    "street": "Rua das Flores",
+    "number": "250",
+    "district": "Jardim Primavera",
+    "postalCode": "01310-100",
+    "city": {
+      "name": "São Paulo",
+      "state": "SP"
+    }
+  },
+  "country": "BR",
+  "documents": [
+    {
+      "type": "CUSTOMER_IDENTIFY",
+      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..."
+    }
+  ]
 }
 ```
 
-### Successful Response - `200 OK`
+```json PJ example
+{
+  "taxId": "12345678000195",
+  "accountType": "PJ",
+  "name": "Tech Solutions LTDA",
+  "email": "contato@techsolutions.com",
+  "phone": "1133334444",
+  "company": {
+    "companyName": "Tech Solutions Tecnologia LTDA",
+    "tradingName": "Tech Solutions",
+    "fieldOfActivity": "Software Development",
+    "email": "contato@techsolutions.com",
+    "phone": "1133334444",
+    "phoneDdi": "+55",
+    "website": "https://techsolutions.com"
+  },
+  "partners": [
+    {
+      "name": "Carlos",
+      "lastName": "Mendes",
+      "identityDocument": {
+        "documentValue": "334445556",
+        "documentType": "RG",
+        "documentBase64Image": "iVBORw0KGgoAAAANSUhEUgAA..."
+      }
+    }
+  ],
+  "address": {
+    "street": "Avenida Empresarial",
+    "number": "1000",
+    "district": "Vila Nova",
+    "postalCode": "04500-000",
+    "city": {
+      "name": "São Paulo",
+      "state": "SP"
+    }
+  },
+  "country": "BR",
+  "documents": [
+    {
+      "type": "SOCIAL_CONTRACT",
+      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..."
+    },
+    {
+      "type": "CONSTITUTIONAL_DOCUMENT",
+      "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..."
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created (PF)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30003",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "39053344705",
+  "accountType": "PF",
+  "name": "Maria Fernanda Souza",
+  "email": "maria.souza@example.com",
+  "phone": "11999998888",
+  "birthDate": "1992-07-14",
+  "address": {
+    "street": "Rua das Flores",
+    "number": "250",
+    "district": "Jardim Primavera",
+    "postalCode": "01310-100",
+    "city": {
+      "name": "São Paulo",
+      "state": "SP"
+    }
+  },
+  "country": {
+    "code": "BR",
+    "name_pt": "Brasil",
+    "ddi": "+55"
+  },
+  "documents": [
+    {
+      "_id": "66f0c2c...003",
+      "documentType": "CUSTOMER_IDENTIFY",
+      "status": "APPROVED"
+    }
+  ],
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 0 },
+  "wallet": { "address": "0x4444444444444444444444444444444444444444" }
+}
+```
+
+```json 201 Created (PJ)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "12345678000195",
+  "accountType": "PJ",
+  "name": "Tech Solutions LTDA",
+  "email": "contato@techsolutions.com",
+  "phone": "1133334444",
+  "company": {
+    "companyName": "Tech Solutions Tecnologia LTDA",
+    "tradingName": "Tech Solutions",
+    "fieldOfActivity": "Software Development",
+    "email": "contato@techsolutions.com",
+    "phone": "1133334444",
+    "phoneDdi": "+55",
+    "website": "https://techsolutions.com"
+  },
+  "partners": [
+    {
+      "name": "Carlos",
+      "lastName": "Mendes",
+      "jobTitle": "Managing Partner",
+      "dateOfBirth": "1985-05-20",
+      "identityDocument": {
+        "documentValue": "334445556",
+        "documentType": "RG",
+        "documentImage": "https://amazonaws.com"
+      },
+      "email": "carlos.mendes@techsolutions.com",
+      "phone": "11988887777",
+      "isPoliticallyExposedPerson": false,
+      "isAmericanCitizen": false
+    }
+  ],
+  "address": {
+    "street": "Avenida Empresarial",
+    "number": "1000",
+    "district": "Vila Nova",
+    "postalCode": "04500-000",
+    "city": {
+      "name": "São Paulo",
+      "state": "SP"
+    }
+  },
+  "country": {
+    "code": "BR",
+    "name_pt": "Brasil",
+    "ddi": "+55"
+  },
+  "documents": [
+    {
+      "_id": "66f0c2c...001",
+      "documentType": "SOCIAL_CONTRACT",
+      "status": "APPROVED"
+    },
+    {
+      "_id": "66f0c2c...002",
+      "documentType": "PARTNER_ID",
+      "status": "APPROVED"
+    }
+  ],
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 0 },
+  "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+}
+```
+</ResponseExample>
+
+### Response codes
+
+| Code | Description |
+| --- | --- |
+| `201` | Customer created successfully — persist the `_id` for future operations |
+| `400` | Invalid data or missing required fields |
+| `401` | Invalid token or `secret-key` |
+
+---
+
+## GET /customers/all
+
+Returns the list of all active (non-deleted) customers linked to the authenticated user, containing the full profile object.
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {{accessToken}}`
+</ParamField>
+
+<ParamField header="secret-key" type="string" required>
+  `{{secretKeyBase64}}`
+</ParamField>
+
+### Response
+
+<ResponseField name="customers" type="object[]">
+  Array of full objects for each customer. The structure is identical to the one returned when creating a customer, containing address, country, PJ/PF data, and approved documents.
+</ResponseField>
+
+<RequestExample>
+```http
+GET https://gmc-api.gomoney.me/api/customers/all
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK (includes PF and PJ)
+[
+  {
+    "_id": "66f0b1b5c1f7b7dc0ce30001",
+    "userId": "66f0b1b5c1f7b7dc0ce20001",
+    "taxId": "39053344705",
+    "accountType": "PF",
+    "name": "External Customer 01",
+    "email": "customer01@example.com",
+    "phone": "11999999999",
+    "birthDate": "1990-01-01",
+    "address": {
+      "street": "Rua Exemplo",
+      "number": "123",
+      "district": "Centro",
+      "postalCode": "01000-000",
+      "city": { "name": "São Paulo", "state": "SP" }
+    },
+    "country": { "code": "BR", "name_pt": "Brasil", "ddi": "+55" },
+    "documents": [],
+    "deleted": false,
+    "balance": { "currency": "BRL", "amount": 1500 },
+    "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+  },
+  {
+    "_id": "66f0b1b5c1f7b7dc0ce30002",
+    "userId": "66f0b1b5c1f7b7dc0ce20001",
+    "taxId": "12345678000195",
+    "accountType": "PJ",
+    "name": "Tech Solutions LTDA",
+    "email": "contato@techsolutions.com",
+    "phone": "1133334444",
+    "company": {
+      "companyName": "Tech Solutions Tecnologia LTDA",
+      "tradingName": "Tech Solutions",
+      "fieldOfActivity": "Software Development"
+    },
+    "partners": [
+      {
+        "name": "Carlos",
+        "lastName": "Mendes",
+        "identityDocument": {
+          "documentValue": "334445556",
+          "documentType": "RG",
+          "documentImage": "https://amazonaws.com"
+        }
+      }
+    ],
+    "address": {
+      "street": "Avenida Empresarial",
+      "number": "1000",
+      "district": "Vila Nova",
+      "postalCode": "04500-000",
+      "city": { "name": "São Paulo", "state": "SP" }
+    },
+    "country": { "code": "BR", "name_pt": "Brasil", "ddi": "+55" },
+    "documents": [],
+    "deleted": false,
+    "balance": { "currency": "BRL", "amount": 0 },
+    "wallet": { "address": "0x3333333333333333333333333333333333333333" }
+  }
+]
+```
+</ResponseExample>
+
+### Response codes
+
+| Code | Description |
+| --- | --- |
+| `200` | List returned successfully |
+| `401` | Invalid token or `secret-key` |
+
+---
+
+## GET /customers/{customerId}
+
+Retrieves a specific customer by their internal identifier, linked to the authenticated user, containing the full profile object.
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {{accessToken}}`
+</ParamField>
+
+<ParamField header="secret-key" type="string" required>
+  `{{secretKeyBase64}}`
+</ParamField>
+
+### Path parameters
+
+<ParamField path="customerId" type="string" required>
+  Internal identifier of the customer to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="customer" type="object">
+  Full object of the retrieved customer. The structure is identical to the one returned when creating a customer, containing address, country, PJ/PF data, and approved documents. See the detailed fields in the [POST /customers](#post-customers) section.
+</ResponseField>
+
+<RequestExample>
+```http PF example
+GET https://gmc-api.gomoney.me/api/customers/66f0b1b5c1f7b7dc0ce30001
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+
+```http PJ example
+GET https://gmc-api.gomoney.me/api/customers/66f0b1b5c1f7b7dc0ce30002
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK (PF)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30001",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "39053344705",
+  "accountType": "PF",
+  "name": "External Customer 01",
+  "email": "customer01@example.com",
+  "phone": "11999999999",
+  "birthDate": "1990-01-01",
+  "address": {
+    "street": "Rua Exemplo",
+    "number": "123",
+    "district": "Centro",
+    "postalCode": "01000-000",
+    "city": { "name": "São Paulo", "state": "SP" }
+  },
+  "country": { "code": "BR", "name_pt": "Brasil", "ddi": "+55" },
+  "documents": [],
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 1500 },
+  "wallet": { "address": "0x2222222222222222222222222222222222222222" }
+}
+```
+
+```json 200 OK (PJ)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30002",
+  "userId": "66f0b1b5c1f7b7dc0ce20001",
+  "taxId": "12345678000195",
+  "accountType": "PJ",
+  "name": "Tech Solutions LTDA",
+  "email": "contato@techsolutions.com",
+  "phone": "1133334444",
+  "company": {
+    "companyName": "Tech Solutions Tecnologia LTDA",
+    "tradingName": "Tech Solutions",
+    "fieldOfActivity": "Software Development"
+  },
+  "partners": [
+    {
+      "name": "Carlos",
+      "lastName": "Mendes",
+      "identityDocument": {
+        "documentValue": "334445556",
+        "documentType": "RG",
+        "documentImage": "https://amazonaws.com"
+      }
+    }
+  ],
+  "address": {
+    "street": "Avenida Empresarial",
+    "number": "1000",
+    "district": "Vila Nova",
+    "postalCode": "04500-000",
+    "city": { "name": "São Paulo", "state": "SP" }
+  },
+  "country": { "code": "BR", "name_pt": "Brasil", "ddi": "+55" },
+  "documents": [],
+  "deleted": false,
+  "balance": { "currency": "BRL", "amount": 0 },
+  "wallet": { "address": "0x3333333333333333333333333333333333333333" }
+}
+```
+</ResponseExample>
+
+### Response codes
+
+| Code | Description |
+| --- | --- |
+| `200` | Customer retrieved successfully |
+| `401` | Invalid token or `secret-key` |
+| `403` | The customer does not belong to the authenticated user |
+| `404` | Customer not found |
+
+---
+
+## PATCH /customers/{customerId}
+
+Partially updates the data of an existing customer. Only the fields sent in the body will be modified. You can also send the `company`, `partners`, `address`, `country`, and `documents` objects for updates.
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {{accessToken}}`
+</ParamField>
+
+<ParamField header="secret-key" type="string" required>
+  `{{secretKeyBase64}}`
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  `application/json`
+</ParamField>
+
+### Path parameters
+
+<ParamField path="customerId" type="string" required>
+  Internal identifier of the customer to update.
+</ParamField>
+
+### Body (all optional)
+
+<ParamField body="name" type="string">
+  Updated customer name.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Updated customer email.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Updated customer phone number.
+</ParamField>
+
+<ParamField body="company" type="object">
+  Company data object for updating. Accepts the same properties described in [POST /customers](#post-customers).
+</ParamField>
+
+<ParamField body="partners" type="object[]">
+  List of partners for updating. Accepts the same properties described in [POST /customers](#post-customers).
+</ParamField>
+
+<ParamField body="address" type="object">
+  Address for updating. Accepts the same properties described in [POST /customers](#post-customers).
+</ParamField>
+
+<ParamField body="country" type="string">
+  Country code for updating.
+</ParamField>
+
+<ParamField body="documents" type="object[]">
+  List of documents for updating/submission.
+
+  <Expandable title="properties of each document">
+    <ParamField body="type" type="enum<string>">
+      Document type. Possible values:
+      - `CUSTOMER_IDENTIFY` — customer's identification document
+      - `SOCIAL_CONTRACT` — articles of association
+      - `CONSTITUTIONAL_DOCUMENT` — constitutional document
+      - `PARTNER_ID` — partner's identification document
+      - `OTHER` — other document type
+    </ParamField>
+    <ParamField body="imageBase64" type="string">
+      Document image, Base64-encoded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
 
 <ResponseField name="_id" type="string">
-  Internal identifier of the customer.
+  Customer's internal identifier.
 </ResponseField>
 
 <ResponseField name="taxId" type="string">
-  Updated customer document (CPF or CNPJ).
+  Updated customer tax document.
 </ResponseField>
 
 <ResponseField name="name" type="string">
@@ -274,75 +891,150 @@ Content-Type: application/json
   Updated customer email.
 </ResponseField>
 
-### Response Example
+<ResponseField name="phone" type="string">
+  Updated customer phone number.
+</ResponseField>
 
-```json
+<RequestExample>
+```json PF example
+{
+  "name": "External Customer 01 Updated",
+  "email": "customer01.updated@example.com",
+  "phone": "11988888888"
+}
+```
+
+```json PJ example
+{
+  "email": "newcontact@techsolutions.com",
+  "phone": "1133335555",
+  "company": {
+    "tradingName": "Tech Solutions Brazil",
+    "website": "https://techsolutionsbrasil.com"
+  },
+  "address": {
+    "street": "Avenida Empresarial",
+    "number": "1500",
+    "district": "Vila Nova",
+    "postalCode": "04500-000",
+    "city": {
+      "name": "São Paulo",
+      "state": "SP"
+    }
+  }
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK (PF)
 {
   "_id": "66f0b1b5c1f7b7dc0ce30001",
   "taxId": "39053344705",
   "name": "External Customer 01 Updated",
-  "email": "cliente01.updated@example.com"
+  "email": "customer01.updated@example.com",
+  "phone": "11988888888"
 }
 ```
 
-### Response Codes
+```json 200 OK (PJ)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30002",
+  "taxId": "12345678000195",
+  "email": "newcontact@techsolutions.com",
+  "phone": "1133335555",
+  "company": {
+    "companyName": "Tech Solutions Tecnologia LTDA",
+    "tradingName": "Tech Solutions Brazil",
+    "fieldOfActivity": "Software Development",
+    "website": "https://techsolutionsbrasil.com"
+  },
+  "address": {
+    "street": "Avenida Empresarial",
+    "number": "1500",
+    "district": "Vila Nova",
+    "postalCode": "04500-000",
+    "city": { "name": "São Paulo", "state": "SP" }
+  }
+}
+```
+</ResponseExample>
 
-| Code | Description                                               |
-| ------ | ------------------------------------------------------ |
-| `200`  | Customer updated successfully                           |
-| `400`  | Invalid data in the request body                        |
-| `401`  | Invalid token or `secret-key`                           |
-| `403`  | The customer does not belong to the authenticated user  |
-| `404`  | Customer not found                                      |
+### Response codes
+
+| Code | Description |
+| --- | --- |
+| `200` | Customer updated successfully |
+| `400` | Invalid data in the request body |
+| `401` | Invalid token or `secret-key` |
+| `403` | The customer does not belong to the authenticated user |
+| `404` | Customer not found |
 
 ---
 
-## DELETE /customers/{customerId} - Remove customer
+## DELETE /customers/{customerId}
 
-Soft-deletes a customer. The record is **not deleted**; only the `deleted` field is changed to `true`, preserving the linked transaction history.
+Logically removes a customer. The record is **not deleted** — only the `deleted` field is set to `true`, preserving the associated transaction history.
 
-### Request
+<ParamField header="Authorization" type="string" required>
+  `Bearer {{accessToken}}`
+</ParamField>
 
-```http
-DELETE https://gmc-api.gomoney.me/api/customers/{customerId}
+<ParamField header="secret-key" type="string" required>
+  `{{secretKeyBase64}}`
+</ParamField>
+
+### Path parameters
+
+<ParamField path="customerId" type="string" required>
+  Internal identifier of the customer to remove.
+</ParamField>
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Customer's internal identifier.
+</ResponseField>
+
+<ResponseField name="deleted" type="boolean">
+  Confirms that the customer has been marked as removed (`true`).
+</ResponseField>
+
+<RequestExample>
+```http PF example
+DELETE https://gmc-api.gomoney.me/api/customers/66f0b1b5c1f7b7dc0ce30001
 Authorization: Bearer {{accessToken}}
 secret-key: {{secretKeyBase64}}
 ```
 
-### Path Parameter
+```http PJ example
+DELETE https://gmc-api.gomoney.me/api/customers/66f0b1b5c1f7b7dc0ce30002
+Authorization: Bearer {{accessToken}}
+secret-key: {{secretKeyBase64}}
+```
+</RequestExample>
 
-<ParamField path="customerId" type="string" required>
-  Internal identifier of the customer to remove (`_id` returned on creation).
-</ParamField>
-
-### Successful Response - `200 OK`
-
-<ResponseField name="_id" type="string">
-  Internal identifier of the removed customer.
-</ResponseField>
-
-<ResponseField name="deleted" type="boolean">
-  Indicates that the customer was soft-deleted. Always `true` after this operation.
-</ResponseField>
-
-### Response Example
-
-```json
+<ResponseExample>
+```json 200 OK (PF)
 {
   "_id": "66f0b1b5c1f7b7dc0ce30001",
   "deleted": true
 }
 ```
 
-<Note>
-  The deletion operation is **logical**: the customer is marked with `deleted: true` and no longer appears in the `GET /customers/all` list, but its transaction history remains accessible for auditing purposes.
-</Note>
+```json 200 OK (PJ)
+{
+  "_id": "66f0b1b5c1f7b7dc0ce30002",
+  "deleted": true
+}
+```
+</ResponseExample>
 
-### Response Codes
+### Response codes
 
-| Code | Description                                               |
-| ------ | ------------------------------------------------------ |
-| `200`  | Customer soft-deleted successfully                      |
-| `401`  | Invalid token or `secret-key`                           |
-| `403`  | The customer does not belong to the authenticated user  |
-| `404`  | Customer not found                                      |
+| Code | Description |
+| --- | --- |
+| `200` | Customer logically removed successfully |
+| `401` | Invalid token or `secret-key` |
+| `403` | The customer does not belong to the authenticated user |
+| `404` | Customer not found |

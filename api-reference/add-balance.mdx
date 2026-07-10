@@ -45,15 +45,11 @@ Content-Type: application/json
 ### Parâmetros do corpo da requisição
 
 <ParamField body="amount" type="number" required>
-  Valor da adição a ser realizada.
+  Valor da adição a ser realizada em BRL.
 </ParamField>
 
 <ParamField body="customerIdentifier" type="string" required>
   Identificador do customer destinatário. Pode ser o `_id` interno ou o `taxId` (CPF/CNPJ).
-</ParamField>
-
-<ParamField body="currency" type="enum" required>
-  Moeda do valor informado. Valores aceitos: `BRL`, `USD`, `GMC`, `USDT`.
 </ParamField>
 
 ### Exemplo de requisição
@@ -63,8 +59,7 @@ Content-Type: application/json
   "items": [
     {
       "amount": 1000,
-      "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001",
-      "currency": "GMC"
+      "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001"
     }
   ]
 }
@@ -133,11 +128,7 @@ Content-Type: application/json
         </ResponseField>
 
         <ResponseField name="sourceAmount" type="number">
-          Valor de origem informado na requisição.
-        </ResponseField>
-
-        <ResponseField name="sourceCurrency" type="string">
-          Moeda de origem da transação.
+          Valor em BRL informado na requisição.
         </ResponseField>
 
         <ResponseField name="targetGmcAmount" type="string">
@@ -172,16 +163,6 @@ Content-Type: application/json
             <ResponseField name="fixedFeeSource" type="string">Origem da taxa fixa.</ResponseField>
             <ResponseField name="percentageFeeSource" type="string">Origem da taxa percentual.</ResponseField>
             <ResponseField name="issueTaxSource" type="string">Origem da taxa de emissão.</ResponseField>
-          </Expandable>
-        </ResponseField>
-
-        <ResponseField name="conversion" type="object">
-          Dados de conversão de moeda utilizados na transação.
-
-          <Expandable title="Campos de conversion">
-            <ResponseField name="brlPerGmc" type="number">Taxa de câmbio BRL por GMC.</ResponseField>
-            <ResponseField name="usdtBrlRate" type="number">Taxa de câmbio USDT/BRL.</ResponseField>
-            <ResponseField name="sourceAmountBrl" type="number">Valor de origem convertido em BRL.</ResponseField>
           </Expandable>
         </ResponseField>
 
@@ -230,7 +211,6 @@ Content-Type: application/json
       {
         "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001",
         "sourceAmount": 1000,
-        "sourceCurrency": "GMC",
         "targetGmcAmount": "1000",
         "status": "COMPLETED",
         "error": null,

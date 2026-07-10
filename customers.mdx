@@ -18,15 +18,23 @@ O cadastro de customers é **obrigatório** antes de realizar operações financ
 |----------|--------------------------------------------------------|
 | `_id`    | Identificador único do customer (gerado automaticamente) |
 | `userId` | ID do usuário de integração ao qual o customer pertence |
-| `taxId`  | CPF ou documento fiscal do cliente                     |
+| `taxId`  | CPF ou documento fiscal ou ID/Passaporte do cliente                     |
 | `name`   | Nome completo do cliente                               |
 | `email`  | Endereço de e-mail do cliente                          |
+| `phone`  | Telefone para contato do cliente                          |
+| `accountType` | Informar se o cliente é PF (Pessoa Física) ou PJ (Pessoa Jurídica) | 
+| `company` | Informações da empresa, caso for um cliente PJ (Objeto) |
+| `partners` | Array de objetos com as informações dos sócios da empresa, caso seja PJ |
+| `birthDate` | Informações da data de nascimento, caso for um cliente PF |
+| `country` | Informação do país do cliente |
+| `documents` | Array para envio dos documentos e seus tipos |
+| `address` | Informações do endereço do cliente (Objeto) |
 | `deleted`| Indica se o customer foi excluído logicamente          |
 | `balance`| Saldo do customer (`currency` e `amount`)              |
 | `wallet` | Carteira associada (`address`)                         |
 
 <Note>
-O campo `taxId` aceita CPF e outros documentos fiscais brasileiros. Certifique-se de que o documento informado é válido e pertence ao cliente real para garantir a conformidade regulatória.
+O campo `taxId` aceita CPF e outros documentos fiscais brasileiros e estrangeiros. Certifique-se de que o documento informado é válido e pertence ao cliente real para garantir a conformidade regulatória.
 </Note>
 
 ---
@@ -108,11 +116,11 @@ O `customerIdentifier` utilizado nas operações de **adição de saldo** e outr
 **Exemplos de uso:**
 
 ```json
-{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000, "currency": "BRL" }
+{ "customerIdentifier": "64f1a2b3c4d5e6f7a8b9c0d1", "amount": 15000 }
 ```
 
 ```json
-{ "customerIdentifier": "123.456.789-00", "amount": 15000, "currency": "BRL" }
+{ "customerIdentifier": "123.456.789-00", "amount": 15000 }
 ```
 
 <Note>
