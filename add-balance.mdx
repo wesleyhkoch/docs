@@ -1,5 +1,5 @@
 ---
-title: "Adição de Saldo: Como creditar GMC via Clientes"
+title: "Adição de Saldo"
 sidebarTitle: "Adição de Saldo"
 description: "Entenda como a Adição de Saldo credita GMC em carteiras de clientes via GoMoney API, com rastreabilidade completa em blockchain."
 ---
@@ -48,10 +48,10 @@ Chave secreta vinculada à integração, fornecida durante o credenciamento. Dev
 
 Ao submeter uma Adição de Saldo, os seguintes campos são indispensáveis:
 
-| Campo                  | Descrição                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `customerIdentifier`   | Identificador do cliente: `_id` interno da plataforma ou `taxId` (CPF/CNPJ). **Obrigatório.** |
-| `amount`               | Valor a ser creditado, em BRL.                           |
+| Campo | Descrição |
+| --- | --- |
+| `customerIdentifier` | Identificador do cliente: `_id` interno da plataforma ou `taxId` (CPF/CNPJ). **Obrigatório.** |
+| `amount` | Valor a ser creditado, em BRL. |
 
 <Tip>
   Inclua sempre o `customerIdentifier`. Isso garante rastreabilidade e evita ambiguidades no processamento do crédito.
@@ -97,18 +97,11 @@ A API GoMoney disponibiliza endpoints para consulta das operações de Adição 
 ## Referências
 
 <CardGroup cols={2}>
-  <Card
-    title="API de Adição de Saldo"
-    icon="circle-dollar-to-slot"
-    href="/api-reference/add-balance"
-  >
+  <Card title="API de Adição de Saldo" icon="circle-dollar-to-slot" href="/api-reference/add-balance">
     Consulte a referência completa dos endpoints, parâmetros e exemplos de requisição para a operação de Adição de Saldo.
   </Card>
-  <Card
-    title="Customers"
-    icon="users"
-    href="/customers"
-  >
+
+  <Card title="Customers" icon="users" href="/customers">
     Saiba como cadastrar e gerenciar clientes na plataforma GoMoney antes de realizar operações de crédito.
   </Card>
 </CardGroup>
