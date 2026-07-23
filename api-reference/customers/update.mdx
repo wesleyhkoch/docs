@@ -1,0 +1,8 @@
+---
+title: "Atualizar Customer"
+sidebarTitle: "Atualizar"
+description: "Atualize parcialmente os dados de um customer existente na GoMoney API."
+openapi: "PATCH /customers/{customerId}"
+---
+
+Apenas os campos enviados no corpo são modificados. Você também pode enviar os objetos `company`, `partners`, `address`, `country` e `documents` para atualização — eles aceitam as mesmas propriedades descritas em [Criar customer](/api-reference/customers/create).

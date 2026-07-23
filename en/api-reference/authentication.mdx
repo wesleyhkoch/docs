@@ -2,6 +2,7 @@
 title: "GoMoney Integration API Authentication Flow"
 sidebarTitle: "Authentication"
 description: "Technical authentication reference for the GoMoney integration API: login, secret-key generation, and correct use of authorization headers."
+openapi: "POST /users/integration/login"
 ---
 
 This page describes the authentication flow of the **GoMoney integration API**. To consume protected routes, you must obtain a JWT token through the integration login endpoint and build the `secret-key` from the credentials provided by support.
@@ -21,68 +22,11 @@ Before making the first authenticated call, make sure all items below are config
 
 ## Login Endpoint
 
-### `POST /users/integration/login`
+Authenticates the integration access and returns a JWT token for use on protected routes. Use the playground below to test with your own credentials — the `token` returned in the response is what you'll paste into the `Authorization` field on the other API Reference pages.
 
-Authenticates the integration access and returns a JWT token for use on protected routes.
-
-**Full URL:**
-
-```
-https://gmc-api.gomoney.me/api/users/integration/login
-```
-
-### Request Body
-
-<ParamField body="email" type="string" required>
-  Email of the integration access registered on the GoMoney platform.
-</ParamField>
-
-<ParamField body="password" type="string" required>
-  Password of the integration access registered on the GoMoney platform.
-</ParamField>
-
-### Request Example
-
-```http
-POST https://gmc-api.gomoney.me/api/users/integration/login
-Content-Type: application/json
-```
-
-```json
-{
-  "email": "your-user@example.com",
-  "password": "your-password"
-}
-```
-
-### Successful Response — `201 Created`
-
-<ResponseField name="token" type="string">
-  Bearer JWT to be used in the `Authorization` header of protected routes.
-</ResponseField>
-
-<ResponseField name="title" type="string">
-  Confirmation message returned by the API after successful login.
-</ResponseField>
-
-<ResponseField name="expiresIn" type="integer">
-  Token expiration timestamp in milliseconds (Unix epoch ms).
-</ResponseField>
-
-<ResponseField name="userId" type="string">
-  Unique identifier of the authenticated user.
-</ResponseField>
-
-### Response Example
-
-```json
-{
-  "token": "integration-jwt-token",
-  "title": "Successfull login.",
-  "expiresIn": 1783191600000,
-  "userId": "66f0b1b5c1f7b7dc0ce20001"
-}
-```
+<Tip>
+  This endpoint does not require `secret-key` or `Origin` — only `email` and `password` in the request body.
+</Tip>
 
 ---
 

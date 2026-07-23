@@ -1,0 +1,14 @@
+---
+title: "Adicionar Saldo"
+sidebarTitle: "Adicionar"
+description: "Crie uma nova transação de adição de saldo para um customer na GoMoney API."
+openapi: "POST /transactions/add-balance"
+---
+
+<Note>
+  - A `secret-key` deve pertencer ao mesmo usuário do Bearer token.
+  - O cabeçalho `Origin` deve corresponder exatamente ao domínio aprovado pelo suporte.
+  - O campo `customerIdentifier` é obrigatório e pode ser o `_id` ou o `taxId` do customer.
+  - As taxas seguem a hierarquia: customer → usuário → configurações globais.
+  - A carteira operacional deve estar cadastrada e aprovada antes de realizar adições.
+</Note>

@@ -1,0 +1,14 @@
+---
+title: "Create Customer"
+sidebarTitle: "Create"
+description: "Create a new customer in the GoMoney API. A wallet is generated automatically and the record becomes available for balance additions."
+openapi: "POST /customers"
+---
+
+<Note>
+  Only send `company` and `partners` when `accountType` is `PJ`. Only send `birthDate` when `accountType` is `PF`.
+</Note>
+
+<Tip>
+  Save the `_id` returned in the response — it (or the `taxId`) is used as `customerIdentifier` in [balance addition](/en/api-reference/add-balance/create) operations.
+</Tip>

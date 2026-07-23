@@ -1,0 +1,14 @@
+---
+title: "Add Balance"
+sidebarTitle: "Add"
+description: "Create a new balance addition transaction for a customer in the GoMoney API."
+openapi: "POST /transactions/add-balance"
+---
+
+<Note>
+  - The `secret-key` must belong to the same user as the Bearer token.
+  - The `Origin` header must exactly match the domain approved by support.
+  - The `customerIdentifier` field is required and can be the customer's `_id` or `taxId`.
+  - Fees follow the hierarchy: customer → user → global settings.
+  - The operational wallet must be registered and approved before additions are made.
+</Note>

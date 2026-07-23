@@ -8,6 +8,13 @@
     "dark": "#B51256"
   },
   "favicon": "/favicon.svg",
+  "api": {
+    "openapi": "openapi.json",
+    "playground": {
+      "display": "interactive",
+      "proxy": true
+    }
+  },
   "navigation": {
     "languages": [
       {
@@ -40,11 +47,23 @@
               },
               {
                 "group": "Clientes",
-                "pages": ["api-reference/customers"]
+                "pages": [
+                  "api-reference/customers/overview",
+                  "api-reference/customers/create",
+                  "api-reference/customers/list",
+                  "api-reference/customers/get",
+                  "api-reference/customers/update",
+                  "api-reference/customers/delete"
+                ]
               },
               {
                 "group": "Adição de Saldo",
-                "pages": ["api-reference/add-balance"]
+                "pages": [
+                  "api-reference/add-balance/overview",
+                  "api-reference/add-balance/create",
+                  "api-reference/add-balance/list",
+                  "api-reference/add-balance/get"
+                ]
               },
               {
                 "group": "Erros",
@@ -83,11 +102,23 @@
               },
               {
                 "group": "Customers",
-                "pages": ["en/api-reference/customers"]
+                "pages": [
+                  "en/api-reference/customers/overview",
+                  "en/api-reference/customers/create",
+                  "en/api-reference/customers/list",
+                  "en/api-reference/customers/get",
+                  "en/api-reference/customers/update",
+                  "en/api-reference/customers/delete"
+                ]
               },
               {
                 "group": "Add Balance",
-                "pages": ["en/api-reference/add-balance"]
+                "pages": [
+                  "en/api-reference/add-balance/overview",
+                  "en/api-reference/add-balance/create",
+                  "en/api-reference/add-balance/list",
+                  "en/api-reference/add-balance/get"
+                ]
               },
               {
                 "group": "Errors",  

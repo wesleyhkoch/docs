@@ -1,0 +1,54 @@
+---
+title: "API Customers — Visão Geral"
+sidebarTitle: "Visão Geral"
+description: "Visão geral dos endpoints de Customers da GoMoney API: hierarquia de recursos, autenticação e navegação pelas operações disponíveis."
+---
+
+A API de Customers permite que você gerencie os clientes externos vinculados à sua conta GoMoney. Cada customer possui um documento fiscal (CPF ou CNPJ ou ID/Passaporte), um endereço de wallet gerado automaticamente e um saldo rastreável. Todas as operações exigem autenticação via token Bearer e secret-key.
+
+<Note>
+  A hierarquia de recursos segue a ordem **customer → user → settings**: customers são sempre criados sob o contexto do usuário autenticado e herdam as configurações definidas em seu perfil. O campo `userId` presente em cada customer identifica o usuário proprietário do registro.
+</Note>
+
+## Base URL
+
+```text
+https://gmc-api.gomoney.me/api
+```
+
+## Autenticação
+
+Todos os endpoints exigem os seguintes cabeçalhos:
+
+| Cabeçalho       | Valor                     |
+| --------------- | -------------------------- |
+| `Authorization` | `Bearer {{accessToken}}`   |
+| `secret-key`    | `{{secretKeyBase64}}`      |
+
+<Tip>
+  Não sabe como obter `accessToken` e `secretKeyBase64`? Veja [Autenticação](/api-reference/authentication) — o próprio playground de login te devolve o token que você pode colar nos campos de autenticação abaixo.
+</Tip>
+
+## Endpoints disponíveis
+
+<CardGroup cols={2}>
+  <Card title="Criar customer" href="/api-reference/customers/create" icon="user-plus">
+    `POST /customers` — cria um novo customer com wallet automática.
+  </Card>
+  <Card title="Listar customers" href="/api-reference/customers/list" icon="list">
+    `GET /customers/all` — lista todos os customers ativos.
+  </Card>
+  <Card title="Buscar customer" href="/api-reference/customers/get" icon="magnifying-glass">
+    `GET /customers/{customerId}` — busca um customer específico pelo ID.
+  </Card>
+  <Card title="Atualizar customer" href="/api-reference/customers/update" icon="pen">
+    `PATCH /customers/{customerId}` — atualiza campos de um customer existente.
+  </Card>
+  <Card title="Remover customer" href="/api-reference/customers/delete" icon="trash">
+    `DELETE /customers/{customerId}` — remove logicamente um customer.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Cada página de operação inclui um playground interativo — preencha os campos e clique em **Try it** para testar a chamada real, sem precisar do Postman ou Swagger.
+</Tip>

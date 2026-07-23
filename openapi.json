@@ -1,0 +1,551 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GoMoney API de Integração",
+    "version": "1.0.0",
+    "description": "API de integração GoMoney para parceiros: autenticação, gerenciamento de customers e adição de saldo."
+  },
+  "servers": [
+    {
+      "url": "https://gmc-api.gomoney.me/api",
+      "description": "Produção"
+    }
+  ],
+  "security": [],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Token JWT obtido em `POST /users/integration/login`. Use o campo `token` retornado na resposta."
+      },
+      "secretKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "secret-key",
+        "description": "Base64 de `clientKey:clientSecret` fornecidos pelo suporte GoMoney. Veja [Autenticação](/api-reference/authentication#construindo-a-secret-key) para montar o valor."
+      },
+      "originAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Origin",
+        "description": "Domínio aprovado pelo suporte GoMoney para esta integração. Este playground envia a requisição pelo servidor da Mintlify, então o valor digitado aqui é encaminhado como o cabeçalho `Origin` real da chamada — diferente de uma chamada feita via `fetch` no navegador, onde esse cabeçalho não pode ser sobrescrito."
+      }
+    },
+    "schemas": {
+      "City": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Nome da cidade." },
+          "state": { "type": "string", "description": "Sigla do estado (UF)." }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "street": { "type": "string", "description": "Nome da rua/avenida." },
+          "number": { "type": "string", "description": "Número do endereço." },
+          "district": { "type": "string", "description": "Bairro." },
+          "postalCode": { "type": "string", "description": "CEP no formato `00000-000`." },
+          "city": { "$ref": "#/components/schemas/City" }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "companyName": { "type": "string", "description": "Razão social da empresa." },
+          "tradingName": { "type": "string", "description": "Nome fantasia da empresa." },
+          "fieldOfActivity": { "type": "string", "description": "Ramo de atividade da empresa." },
+          "email": { "type": "string", "description": "E-mail de contato da empresa." },
+          "phone": { "type": "string", "description": "Telefone de contato da empresa." },
+          "phoneDdi": { "type": "string", "description": "Código DDI do telefone da empresa (ex.: `+55`)." },
+          "website": { "type": "string", "description": "Website da empresa." }
+        }
+      },
+      "IdentityDocument": {
+        "type": "object",
+        "properties": {
+          "documentValue": { "type": "string", "description": "Número do documento de identidade." },
+          "documentType": { "type": "string", "description": "Tipo do documento (ex.: `RG`)." },
+          "documentBase64Image": { "type": "string", "description": "Imagem do documento codificada em Base64." }
+        }
+      },
+      "Partner": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Primeiro nome do sócio." },
+          "lastName": { "type": "string", "description": "Sobrenome do sócio." },
+          "jobTitle": { "type": "string", "description": "Cargo do sócio na empresa." },
+          "dateOfBirth": { "type": "string", "description": "Data de nascimento do sócio. Formato `YYYY-MM-DD`." },
+          "email": { "type": "string", "description": "E-mail do sócio." },
+          "phone": { "type": "string", "description": "Telefone do sócio." },
+          "isPoliticallyExposedPerson": { "type": "boolean", "description": "Indica se o sócio é uma pessoa politicamente exposta." },
+          "isAmericanCitizen": { "type": "boolean", "description": "Indica se o sócio possui cidadania americana." },
+          "identityDocument": { "$ref": "#/components/schemas/IdentityDocument" }
+        }
+      },
+      "DocumentItem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["CUSTOMER_IDENTIFY", "SOCIAL_CONTRACT", "CONSTITUTIONAL_DOCUMENT", "PARTNER_ID", "OTHER"],
+            "description": "Tipo do documento."
+          },
+          "imageBase64": { "type": "string", "description": "Imagem do documento codificada em Base64." }
+        }
+      },
+      "CustomerCreateRequest": {
+        "type": "object",
+        "required": ["taxId", "accountType", "name", "email", "phone", "address", "country"],
+        "properties": {
+          "taxId": { "type": "string", "description": "Documento fiscal do customer (CPF, CNPJ ou ID/Passaporte)." },
+          "accountType": { "type": "string", "enum": ["PF", "PJ"], "description": "Tipo de conta do customer." },
+          "name": { "type": "string", "description": "Nome do customer (razão social, no caso de PJ)." },
+          "email": { "type": "string", "description": "E-mail de contato do customer." },
+          "phone": { "type": "string", "description": "Telefone de contato do customer (DDD + número, sem máscara)." },
+          "birthDate": { "type": "string", "description": "Data de nascimento do customer. Aplicável apenas quando `accountType` for `PF`. Formato `YYYY-MM-DD`." },
+          "company": { "allOf": [{ "$ref": "#/components/schemas/Company" }], "description": "Dados da empresa. Obrigatório quando `accountType` for `PJ`." },
+          "partners": { "type": "array", "items": { "$ref": "#/components/schemas/Partner" }, "description": "Lista de sócios da empresa. Aplicável apenas quando `accountType` for `PJ`." },
+          "address": { "allOf": [{ "$ref": "#/components/schemas/Address" }] },
+          "country": { "type": "string", "description": "Código do país no padrão ISO 3166-1 alpha-2 (duas letras maiúsculas, ex.: `BR`)." },
+          "documents": { "type": "array", "items": { "$ref": "#/components/schemas/DocumentItem" }, "description": "Lista de documentos enviados para análise/aprovação." }
+        }
+      },
+      "CustomerUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Nome atualizado do customer." },
+          "email": { "type": "string", "description": "E-mail atualizado do customer." },
+          "phone": { "type": "string", "description": "Telefone atualizado do customer." },
+          "company": { "allOf": [{ "$ref": "#/components/schemas/Company" }] },
+          "partners": { "type": "array", "items": { "$ref": "#/components/schemas/Partner" } },
+          "address": { "allOf": [{ "$ref": "#/components/schemas/Address" }] },
+          "country": { "type": "string", "description": "Código do país para atualização." },
+          "documents": { "type": "array", "items": { "$ref": "#/components/schemas/DocumentItem" } }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "description": "Identificador interno do customer." },
+          "userId": { "type": "string", "description": "Identificador do usuário proprietário do customer." },
+          "taxId": { "type": "string", "description": "Documento fiscal do customer." },
+          "accountType": { "type": "string", "enum": ["PF", "PJ"] },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "birthDate": { "type": "string" },
+          "company": { "$ref": "#/components/schemas/Company" },
+          "partners": { "type": "array", "items": { "$ref": "#/components/schemas/Partner" } },
+          "address": { "$ref": "#/components/schemas/Address" },
+          "country": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "description": "Código do país no padrão ISO 3166-1 alpha-2." },
+              "name_pt": { "type": "string", "description": "Nome do país em português." },
+              "ddi": { "type": "string", "description": "Código DDI do país." }
+            }
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "_id": { "type": "string" },
+                "documentType": { "type": "string", "enum": ["CUSTOMER_IDENTIFY", "SOCIAL_CONTRACT", "CONSTITUTIONAL_DOCUMENT", "PARTNER_ID", "OTHER"] },
+                "status": { "type": "string", "description": "Status de análise do documento (ex.: `APPROVED`)." }
+              }
+            }
+          },
+          "deleted": { "type": "boolean", "description": "Indica se o customer foi removido logicamente." },
+          "balance": {
+            "type": "object",
+            "properties": {
+              "currency": { "type": "string", "description": "Moeda do saldo (ex.: `BRL`)." },
+              "amount": { "type": "number" }
+            }
+          },
+          "wallet": {
+            "type": "object",
+            "properties": {
+              "address": { "type": "string", "description": "Endereço da wallet gerada automaticamente para o customer." }
+            }
+          }
+        }
+      },
+      "CustomerUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "taxId": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "company": { "$ref": "#/components/schemas/Company" },
+          "address": { "$ref": "#/components/schemas/Address" }
+        }
+      },
+      "CustomerDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "deleted": { "type": "boolean" }
+        }
+      },
+      "AddBalanceItemRequest": {
+        "type": "object",
+        "required": ["amount", "customerIdentifier"],
+        "properties": {
+          "amount": { "type": "number", "description": "Valor da adição a ser realizada em BRL." },
+          "customerIdentifier": { "type": "string", "description": "Identificador do customer destinatário. Pode ser o `_id` interno ou o `taxId` (CPF/CNPJ)." }
+        }
+      },
+      "AddBalanceRequest": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/AddBalanceItemRequest" } }
+        }
+      },
+      "Fees": {
+        "type": "object",
+        "properties": {
+          "fixedBrl": { "type": "number", "description": "Taxa fixa em BRL." },
+          "percentageBrl": { "type": "number", "description": "Taxa percentual em BRL." },
+          "totalBrl": { "type": "number", "description": "Total de taxas em BRL." },
+          "issueTaxBrl": { "type": "number", "description": "Taxa de emissão em BRL." },
+          "issueTaxRate": { "type": "number", "description": "Alíquota da taxa de emissão." },
+          "fixedFeeSource": { "type": "string", "description": "Origem da taxa fixa." },
+          "percentageFeeSource": { "type": "string", "description": "Origem da taxa percentual." },
+          "issueTaxSource": { "type": "string", "description": "Origem da taxa de emissão." }
+        }
+      },
+      "Blockchain": {
+        "type": "object",
+        "properties": {
+          "mintHash": { "type": ["string", "null"], "description": "Hash da operação de mint." },
+          "approveHash": { "type": ["string", "null"], "description": "Hash da operação de approve." },
+          "transferHash": { "type": ["string", "null"], "description": "Hash da operação de transfer." }
+        }
+      },
+      "BalanceTransactionItem": {
+        "type": "object",
+        "properties": {
+          "customerIdentifier": { "type": "string", "description": "Identificador do customer utilizado na requisição." },
+          "sourceAmount": { "type": "number", "description": "Valor em BRL informado na requisição." },
+          "targetGmcAmount": { "type": "string", "description": "Valor em GMC efetivamente creditado." },
+          "status": { "type": "string", "enum": ["COMPLETED", "FAILED"] },
+          "error": { "type": ["string", "null"], "description": "Mensagem de erro, caso o item tenha falhado." },
+          "customerWalletAddress": { "type": "string", "description": "Endereço de carteira do customer na blockchain." },
+          "destinationWalletAddress": { "type": "string", "description": "Endereço de destino utilizado na transação blockchain." },
+          "fees": { "$ref": "#/components/schemas/Fees" },
+          "blockchain": { "$ref": "#/components/schemas/Blockchain" },
+          "processedAt": { "type": "string", "description": "Timestamp Unix (em segundos) do processamento do item." }
+        }
+      },
+      "BalanceTransaction": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "Sempre `\"Success\"` em caso de sucesso." },
+          "balanceTransaction": {
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string", "description": "Identificador interno da transação de saldo." },
+              "user": { "type": "string", "description": "Identificador do usuário que criou a transação." },
+              "status": { "type": "string", "enum": ["COMPLETED", "FAILED"] },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "totalItems": { "type": "integer" },
+                  "completedItems": { "type": "integer" },
+                  "failedItems": { "type": "integer" },
+                  "totalTargetGmc": { "type": "number" }
+                }
+              },
+              "items": { "type": "array", "items": { "$ref": "#/components/schemas/BalanceTransactionItem" } },
+              "createdAt": { "type": "string", "description": "Timestamp Unix de criação da transação." },
+              "updatedAt": { "type": "string", "description": "Timestamp Unix da última atualização da transação." }
+            }
+          }
+        }
+      },
+      "ErrorLogin401": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "timestamp": { "type": "integer", "description": "Timestamp Unix em milissegundos." },
+          "path": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorAuth401": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorValidation400": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+          "error": { "type": "string" }
+        }
+      },
+      "ErrorForbidden403": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorNotFound404": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorRateLimit429": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "path": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "ErrorNotFoundLinked417": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/users/integration/login": {
+      "post": {
+        "operationId": "integrationLogin",
+        "summary": "Login de integração",
+        "description": "Autentica o acesso de integração e retorna um token JWT para uso nas rotas protegidas.",
+        "tags": ["Autenticação"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "description": "E-mail do acesso de integração cadastrado na plataforma GoMoney." },
+                  "password": { "type": "string", "format": "password", "description": "Senha do acesso de integração cadastrado na plataforma GoMoney." }
+                }
+              },
+              "example": { "email": "seu-usuario@exemplo.com", "password": "sua-senha" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Login realizado com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "description": "Bearer JWT para ser utilizado no cabeçalho Authorization das rotas protegidas." },
+                    "title": { "type": "string" },
+                    "expiresIn": { "type": "integer", "description": "Timestamp de expiração do token em milissegundos (Unix epoch ms)." },
+                    "userId": { "type": "string" }
+                  }
+                },
+                "example": { "token": "integration-jwt-token", "title": "Successfull login.", "expiresIn": 1783191600000, "userId": "66f0b1b5c1f7b7dc0ce20001" }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas ou acesso sem a permissão de integração ativa.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorLogin401" }, "example": { "statusCode": 401, "timestamp": 1783188000000, "path": "/users/integration/login", "message": "Invalid user or password." } } }
+          },
+          "429": {
+            "description": "Usuário bloqueado temporariamente por excesso de tentativas de login.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorRateLimit429" }, "example": { "statusCode": 429, "path": "/users/integration/login", "message": "User blocked - Retry-After: 300" } } }
+          }
+        }
+      }
+    },
+    "/customers": {
+      "post": {
+        "operationId": "createCustomer",
+        "summary": "Criar customer",
+        "description": "Cria um novo customer associado ao usuário autenticado. Ao ser criado, uma wallet é gerada automaticamente para o customer.",
+        "tags": ["Customers"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerCreateRequest" },
+              "examples": {
+                "PF": { "summary": "Exemplo PF", "value": { "taxId": "39053344705", "accountType": "PF", "name": "Maria Fernanda Souza", "email": "maria.souza@example.com", "phone": "11999998888", "birthDate": "1992-07-14", "address": { "street": "Rua das Flores", "number": "250", "district": "Jardim Primavera", "postalCode": "01310-100", "city": { "name": "São Paulo", "state": "SP" } }, "country": "BR", "documents": [{ "type": "CUSTOMER_IDENTIFY", "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..." }] } },
+                "PJ": { "summary": "Exemplo PJ", "value": { "taxId": "12345678000195", "accountType": "PJ", "name": "Tech Solutions LTDA", "email": "contato@techsolutions.com", "phone": "1133334444", "company": { "companyName": "Tech Solutions Tecnologia LTDA", "tradingName": "Tech Solutions", "fieldOfActivity": "Desenvolvimento de Software", "email": "contato@techsolutions.com", "phone": "1133334444", "phoneDdi": "+55", "website": "https://techsolutions.com" }, "partners": [{ "name": "Carlos", "lastName": "Mendes", "identityDocument": { "documentValue": "334445556", "documentType": "RG", "documentBase64Image": "iVBORw0KGgoAAAANSUhEUgAA..." } }], "address": { "street": "Avenida Empresarial", "number": "1000", "district": "Vila Nova", "postalCode": "04500-000", "city": { "name": "São Paulo", "state": "SP" } }, "country": "BR", "documents": [{ "type": "SOCIAL_CONTRACT", "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..." }, { "type": "CONSTITUTIONAL_DOCUMENT", "imageBase64": "iVBORw0KGgoAAAANSUhEUgAA..." }] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Customer criado com sucesso — persista o `_id` para operações futuras.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "400": { "description": "Dados inválidos ou campos obrigatórios ausentes.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorValidation400" } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } }
+        }
+      }
+    },
+    "/customers/all": {
+      "get": {
+        "operationId": "listCustomers",
+        "summary": "Listar customers",
+        "description": "Retorna a lista de todos os customers ativos (não removidos) vinculados ao usuário autenticado, contendo o objeto de perfil por completo.",
+        "tags": ["Customers"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista retornada com sucesso.", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } }
+        }
+      }
+    },
+    "/customers/{customerId}": {
+      "get": {
+        "operationId": "getCustomer",
+        "summary": "Buscar customer por ID",
+        "description": "Busca um customer específico pelo seu identificador interno, vinculado ao usuário autenticado, contendo o objeto de perfil por completo.",
+        "tags": ["Customers"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Identificador interno do customer a ser buscado." }
+        ],
+        "responses": {
+          "200": { "description": "Customer encontrado com sucesso.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } },
+          "403": { "description": "O customer não pertence ao usuário autenticado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorForbidden403" } } } },
+          "404": { "description": "Customer não encontrado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorNotFound404" } } } }
+        }
+      },
+      "patch": {
+        "operationId": "updateCustomer",
+        "summary": "Atualizar customer",
+        "description": "Atualiza parcialmente os dados de um customer existente. Apenas os campos enviados no corpo serão modificados.",
+        "tags": ["Customers"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Identificador interno do customer a ser atualizado." }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerUpdateRequest" },
+              "examples": {
+                "PF": { "summary": "Exemplo PF", "value": { "name": "Cliente Externo 01 Atualizado", "email": "cliente01.updated@example.com", "phone": "11988888888" } },
+                "PJ": { "summary": "Exemplo PJ", "value": { "email": "novocontato@techsolutions.com", "phone": "1133335555", "company": { "tradingName": "Tech Solutions Brasil", "website": "https://techsolutionsbrasil.com" }, "address": { "street": "Avenida Empresarial", "number": "1500", "district": "Vila Nova", "postalCode": "04500-000", "city": { "name": "São Paulo", "state": "SP" } } } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Customer atualizado com sucesso.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerUpdateResponse" } } } },
+          "400": { "description": "Dados inválidos no corpo da requisição.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorValidation400" } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } },
+          "403": { "description": "O customer não pertence ao usuário autenticado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorForbidden403" } } } },
+          "404": { "description": "Customer não encontrado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorNotFound404" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deleteCustomer",
+        "summary": "Remover customer",
+        "description": "Remove logicamente um customer. O registro não é excluído — apenas o campo `deleted` é alterado para `true`, preservando o histórico de transações associado.",
+        "tags": ["Customers"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [] }],
+        "parameters": [
+          { "name": "customerId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Identificador interno do customer a ser removido." }
+        ],
+        "responses": {
+          "200": { "description": "Customer removido logicamente com sucesso.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerDeleteResponse" } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } },
+          "403": { "description": "O customer não pertence ao usuário autenticado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorForbidden403" } } } },
+          "404": { "description": "Customer não encontrado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorNotFound404" } } } }
+        }
+      }
+    },
+    "/transactions/add-balance": {
+      "post": {
+        "operationId": "createAddBalance",
+        "summary": "Adicionar saldo",
+        "description": "Cria uma nova transação de adição de saldo para um customer.",
+        "tags": ["Adição de Saldo"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [], "originAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddBalanceRequest" },
+              "example": { "items": [{ "amount": 1000, "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001" }] }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Adição criada com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BalanceTransaction" },
+                "example": { "title": "Success", "balanceTransaction": { "_id": "66f0b1b5c1f7b7dc0ce40001", "user": "66f0b1b5c1f7b7dc0ce20001", "status": "COMPLETED", "summary": { "totalItems": 1, "completedItems": 1, "failedItems": 0, "totalTargetGmc": 1000 }, "items": [{ "customerIdentifier": "66f0b1b5c1f7b7dc0ce30001", "sourceAmount": 1000, "targetGmcAmount": "1000", "status": "COMPLETED", "error": null, "customerWalletAddress": "0x...", "destinationWalletAddress": "0x...", "fees": { "fixedBrl": 0, "percentageBrl": 0, "totalBrl": 0, "issueTaxBrl": 0, "issueTaxRate": 0, "fixedFeeSource": "not-applied", "percentageFeeSource": "not-applied", "issueTaxSource": "not-applied" }, "blockchain": { "mintHash": null, "approveHash": null, "transferHash": null }, "processedAt": "1783378670" }], "createdAt": "1783378670", "updatedAt": "1783378670" } }
+              }
+            }
+          },
+          "400": { "description": "Payload inválido, valor inconsistente ou customerIdentifier ausente/inválido.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorValidation400" } } } },
+          "401": { "description": "Token, secret-key ou Origin inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } },
+          "403": { "description": "Usuário sem permissão para operar a integração.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorForbidden403" } } } },
+          "503": { "description": "Fluxo GMC indisponível temporariamente.", "content": { "application/json": { "schema": { "type": "object", "properties": { "statusCode": { "type": "integer" }, "message": { "type": "string" } } } } } }
+        }
+      }
+    },
+    "/transactions/add-balance/all": {
+      "get": {
+        "operationId": "listAddBalance",
+        "summary": "Listar adições de saldo",
+        "description": "Retorna todas as transações de adição de saldo vinculadas ao usuário autenticado, com suporte a filtro por período.",
+        "tags": ["Adição de Saldo"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [], "originAuth": [] }],
+        "parameters": [
+          { "name": "initialDate", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Data inicial do filtro, no formato YYYY-MM-DD. Exemplo: 2026-07-01." },
+          { "name": "finalDate", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Data final do filtro, no formato YYYY-MM-DD. Exemplo: 2026-07-31." }
+        ],
+        "responses": {
+          "200": { "description": "Lista retornada com sucesso. Retorna um array de objetos balanceTransaction.", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/BalanceTransaction" } } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } }
+        }
+      }
+    },
+    "/transactions/add-balance/{transactionId}": {
+      "get": {
+        "operationId": "getAddBalance",
+        "summary": "Consultar adição de saldo por ID",
+        "description": "Retorna os detalhes de uma transação de adição de saldo específica, identificada pelo seu ID interno.",
+        "tags": ["Adição de Saldo"],
+        "security": [{ "bearerAuth": [], "secretKeyAuth": [], "originAuth": [] }],
+        "parameters": [
+          { "name": "transactionId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Identificador interno da adição de saldo (_id retornado na criação)." }
+        ],
+        "responses": {
+          "200": { "description": "Adição encontrada e retornada com sucesso.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BalanceTransaction" } } } },
+          "401": { "description": "Token ou secret-key inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorAuth401" } } } },
+          "417": { "description": "Adição não encontrada ou sem vínculo com o usuário autenticado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorNotFoundLinked417" } } } }
+        }
+      }
+    }
+  }
+}

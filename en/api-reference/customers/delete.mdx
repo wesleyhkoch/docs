@@ -1,0 +1,10 @@
+---
+title: "Delete Customer"
+sidebarTitle: "Delete"
+description: "Logically delete a customer in the GoMoney API, preserving the associated transaction history."
+openapi: "DELETE /customers/{customerId}"
+---
+
+<Note>
+  The record is **not removed** — only the `deleted` field is set to `true`, preserving the associated transaction history.
+</Note>

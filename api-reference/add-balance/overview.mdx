@@ -1,0 +1,41 @@
+---
+title: "Adição de Saldo — Visão Geral"
+sidebarTitle: "Visão Geral"
+description: "Visão geral dos endpoints de adição de saldo da GoMoney API: autenticação, regras operacionais e navegação pelas operações disponíveis."
+---
+
+Esta seção descreve os endpoints da GoMoney API destinados à **adição de saldo em customers**. São três operações disponíveis: criar uma adição de saldo, listar todas as adições do usuário autenticado e consultar uma adição específica por ID.
+
+**URL base:** `https://gmc-api.gomoney.me/api`
+
+## Autenticação
+
+Todas as requisições exigem os seguintes cabeçalhos:
+
+| Cabeçalho       | Valor                                                                    |
+| --------------- | ------------------------------------------------------------------------ |
+| `Authorization` | `Bearer {{accessToken}}`                                                 |
+| `secret-key`    | `{{secretKeyBase64}}`                                                    |
+| `Origin`        | `{{allowedOrigin}}` — deve corresponder ao domínio aprovado pelo suporte |
+
+<Warning>
+  O playground desta documentação envia as requisições pelo servidor da Mintlify (não diretamente pelo navegador), então o cabeçalho `Origin` que você digitar é encaminhado normalmente. Ainda assim, ele precisa ser um domínio previamente aprovado pelo suporte GoMoney para a sua integração — caso contrário a API retornará `401`.
+</Warning>
+
+## Endpoints disponíveis
+
+<CardGroup cols={2}>
+  <Card title="Adicionar saldo" href="/api-reference/add-balance/create" icon="circle-dollar-to-slot">
+    `POST /transactions/add-balance` — cria uma nova adição de saldo para um customer.
+  </Card>
+  <Card title="Listar adições" href="/api-reference/add-balance/list" icon="list">
+    `GET /transactions/add-balance/all` — lista as adições do usuário autenticado.
+  </Card>
+  <Card title="Consultar por ID" href="/api-reference/add-balance/get" icon="magnifying-glass">
+    `GET /transactions/add-balance/{transactionId}` — consulta uma adição específica.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Cada página de operação inclui um playground interativo — preencha os campos e clique em **Try it** para testar a chamada real, sem precisar do Postman ou Swagger.
+</Tip>

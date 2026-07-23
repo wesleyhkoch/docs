@@ -1,0 +1,41 @@
+---
+title: "Balance Addition — Overview"
+sidebarTitle: "Overview"
+description: "Overview of the GoMoney API balance addition endpoints: authentication, operational rules, and navigation through the available operations."
+---
+
+This section describes the GoMoney API endpoints for **adding balance to customers**. Three operations are available: create a balance addition, list all additions for the authenticated user, and query a specific addition by ID.
+
+**Base URL:** `https://gmc-api.gomoney.me/api`
+
+## Authentication
+
+All requests require the following headers:
+
+| Header          | Value                                                                    |
+| --------------- | ------------------------------------------------------------------------ |
+| `Authorization` | `Bearer {{accessToken}}`                                                 |
+| `secret-key`    | `{{secretKeyBase64}}`                                                    |
+| `Origin`        | `{{allowedOrigin}}` — must match the domain approved by support         |
+
+<Warning>
+  This documentation's playground sends requests through the Mintlify server (not directly from the browser), so the `Origin` header you type in is forwarded as-is. It still needs to be a domain previously approved by GoMoney support for your integration — otherwise the API returns `401`.
+</Warning>
+
+## Available endpoints
+
+<CardGroup cols={2}>
+  <Card title="Add balance" href="/en/api-reference/add-balance/create" icon="circle-dollar-to-slot">
+    `POST /transactions/add-balance` — creates a new balance addition for a customer.
+  </Card>
+  <Card title="List additions" href="/en/api-reference/add-balance/list" icon="list">
+    `GET /transactions/add-balance/all` — lists additions for the authenticated user.
+  </Card>
+  <Card title="Get by ID" href="/en/api-reference/add-balance/get" icon="magnifying-glass">
+    `GET /transactions/add-balance/{transactionId}` — retrieves a specific addition.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Every operation page includes an interactive playground — fill in the fields and click **Try it** to test the real call, no Postman or Swagger required.
+</Tip>
